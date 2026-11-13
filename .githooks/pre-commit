@@ -1,0 +1,23 @@
+#!/bin/sh
+# WHAT: A git hook. Git runs this automatically before every `git commit`. It formats the
+#   files you're committing with Prettier, then runs the typecheck and client build, and
+#   cancels the commit if either fails. `npm install` turns it on (see the "prepare"
+#   script in the root package.json).
+# WITHOUT IT: Unformatted or broken code could be committed, and you'd only find out when
+#   CI fails on GitHub.
+set -e
+
+echo "pre-commit: formatting staged files..."
+# Only the files in this commit (added, copied, modified, renamed; not deleted).
+git diff --cached --name-only --diff-filter=ACMR -z \
+  | xargs -0 -r npx prettier --write --ignore-unknown --log-level warn
+# Re-stage them so the formatted version is what gets committed.
+git diff --cached --name-only --diff-filter=ACMR -z | xargs -0 -r git add
+
+echo "pre-commit: typechecking..."
+npm run typecheck --silent
+
+echo "pre-commit: building client..."
+npm run build -w client --silent > /dev/null
+
+echo "pre-commit: all checks passed"

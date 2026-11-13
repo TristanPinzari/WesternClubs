@@ -1,0 +1,10 @@
+// WHAT: TypeScript settings for the server (extends ../tsconfig.base.json).
+// WITHOUT IT: `npm run typecheck` couldn't check the server, and Node's built-in types
+//   (process, Buffer, etc.) would show as errors.
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"]
+  },
+  "include": ["src", "drizzle.config.ts"]
+}

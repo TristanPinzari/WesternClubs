@@ -1,0 +1,4 @@
+# WHAT: Forces every text file to use LF line endings, on every operating system.
+# WITHOUT IT: Windows would convert files to CRLF. Diffs would show every line as changed,
+#   and Prettier's format check would fail on Windows machines.
+* text=auto eol=lf

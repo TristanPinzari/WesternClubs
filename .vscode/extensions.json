@@ -1,0 +1,8 @@
+// WHAT: Extensions VS Code recommends when you open this repo. A popup offers to install them.
+//   - Prettier: formats your code (used by format-on-save in settings.json)
+//   - Tailwind CSS IntelliSense: autocompletes Tailwind classes and previews their CSS
+// WITHOUT IT: Format-on-save would silently do nothing for anyone without the Prettier
+//   extension, and Tailwind class names would get no autocomplete.
+{
+  "recommendations": ["esbenp.prettier-vscode", "bradlc.vscode-tailwindcss"]
+}

@@ -1,0 +1,29 @@
+# WHAT: GitHub Actions CI. On every push to main and every pull request, GitHub runs the
+#   format check, typecheck, and client build on a fresh machine. Results show on the PR.
+# WITHOUT IT: Broken code (e.g. from someone skipping the pre-commit hook) could be merged
+#   unnoticed and only be discovered when the deploy fails.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run format:check
+
+      - run: npm run typecheck
+
+      - run: npm run build -w client

@@ -1,0 +1,6 @@
+/*
+  WHAT: Global stylesheet, loaded once in main.tsx. Importing Tailwind here is what makes
+    utility classes like "text-xl" or "rounded-lg" work in every component.
+  WITHOUT IT: None of the Tailwind classes would do anything, so the app would be unstyled.
+*/
+@import "tailwindcss";

@@ -1,0 +1,5 @@
+# WHAT: Prettier's settings. Empty means "use Prettier's defaults". Its presence also
+#   tells editors (e.g. VS Code's Prettier extension) that this project uses Prettier.
+# WITHOUT IT: Editors might format with their own built-in rules instead of Prettier,
+#   causing the pre-commit format check to fail.
+{}

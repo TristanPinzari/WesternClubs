@@ -1,0 +1,17 @@
+// WHAT: TypeScript settings shared by client, server, and shared. Each package's
+//   tsconfig.json extends this one.
+// WITHOUT IT: Every package would need its own full copy of these settings, and they'd
+//   slowly drift apart (e.g. strict mode on in one package but off in another).
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true
+  }
+}

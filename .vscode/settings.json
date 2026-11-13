@@ -1,0 +1,12 @@
+// WHAT: VS Code settings for this project only. They override your personal settings
+//   while you're in this repo: format with Prettier on every save, and use LF line endings.
+// WITHOUT IT: Each person's editor would format differently (or not at all), and files
+//   wouldn't match the project's Prettier style until commit time.
+{
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true,
+  "files.eol": "\n",
+  "files.associations": {
+    "*.css": "tailwindcss"
+  }
+}

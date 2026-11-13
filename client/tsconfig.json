@@ -1,0 +1,13 @@
+// WHAT: TypeScript settings for the frontend (extends ../tsconfig.base.json): enables JSX
+//   for React and the browser's built-in types (document, window, fetch).
+// WITHOUT IT: `npm run typecheck` couldn't check the client, and every .tsx file would be
+//   full of errors.
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "jsx": "react-jsx",
+    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "types": ["vite/client"]
+  },
+  "include": ["src", "vite.config.ts"]
+}

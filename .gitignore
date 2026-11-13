@@ -1,0 +1,12 @@
+# WHAT: Files and folders git should never commit.
+# WITHOUT IT: Git would commit node_modules/ (hundreds of MB that break on other operating
+#   systems), build output, and .env, which would leak our database password and AWS keys.
+
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+.vercel

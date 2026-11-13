@@ -1,0 +1,5 @@
+# WHAT: Files Prettier should skip when formatting or checking.
+# WITHOUT IT: Prettier would reformat package-lock.json (which npm generates) and build
+#   output, creating pointless diffs and slowing down the format check.
+package-lock.json
+dist/

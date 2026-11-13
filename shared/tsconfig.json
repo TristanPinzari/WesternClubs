@@ -1,0 +1,7 @@
+// WHAT: TypeScript settings for the shared package (extends ../tsconfig.base.json).
+// WITHOUT IT: `npm run typecheck` would skip the shared package, so errors there would go
+//   unnoticed until they broke the client or server.
+{
+  "extends": "../tsconfig.base.json",
+  "include": ["src"]
+}
