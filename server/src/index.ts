@@ -7,6 +7,7 @@ import { auth } from "./auth";
 import { env } from "./env";
 import { errorHandler, loadSession } from "./middleware";
 import { clubsRouter } from "./routes/clubs";
+import { eventsRouter } from "./routes/events";
 
 const app = express();
 
@@ -21,7 +22,8 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api/clubs", clubsRouter);
-// TODO: app.use("/api/events", eventsRouter), profiles, rsvps, connections... (see docs/API.md)
+app.use("/api/events", eventsRouter);
+// TODO: profiles, rsvps, connections... (see docs/API.md)
 
 app.use(errorHandler);
 

@@ -59,8 +59,48 @@ export interface Paginated<T> {
   total: number;
 }
 
+// ---- Events (GET /api/events, GET /api/events/:id) ----
+
+export const eventListQuerySchema = z.object({
+  q: z.string().trim().min(1).optional(), // searches title, description, and club name
+  category: z.enum(EVENT_CATEGORIES).optional(),
+  clubId: z.uuid().optional(),
+  from: z.coerce.date().optional(), // only events starting at/after this; defaults to now
+  limit: z.coerce.number().int().min(1).max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
+});
+export type EventListQuery = z.infer<typeof eventListQuerySchema>;
+
+// The club info embedded in each event, so the UI can show "by Western AI" without a 2nd request.
+export interface EventClub {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+// One event in a list. Dates are ISO strings (e.g. "2026-11-20T23:00:00.000Z") because
+// JSON has no date type. Use `new Date(event.startsAt)` on the frontend to format them.
+export interface EventSummary {
+  id: string;
+  title: string;
+  description: string;
+  category: EventCategory;
+  startsAt: string;
+  endsAt: string | null;
+  location: string;
+  priceCents: number; // 1500 = $15.00, 0 = free
+  imageUrl: string | null;
+  club: EventClub;
+}
+
+// The full event, for the detail page.
+export interface EventDetail extends EventSummary {
+  eligibility: string;
+  registrationUrl: string | null;
+  cancelledAt: string | null; // the detail page still loads cancelled events, so show a banner
+  // TODO: goingCount / interestedCount once the event_rsvp table exists
+}
+
 // TODO: add schemas and types as you build each endpoint in docs/API.md, e.g.
 //   - createClubSchema       (name, description)
 //   - createEventSchema      (title, category, startsAt, ... see the event table notes)
-//   - eventListQuerySchema   (q, category, clubId, from, limit, offset)
-//   - EventSummary / EventDetail response types

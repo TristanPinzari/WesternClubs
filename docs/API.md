@@ -60,13 +60,13 @@ Rules worth enforcing:
 
 ## Events
 
-| Status | Method | Path                                                    | Who                              | Notes                                                                                         |
-| ------ | ------ | ------------------------------------------------------- | -------------------------------- | --------------------------------------------------------------------------------------------- |
-| ⬜     | GET    | `/api/events?q=&category=&clubId=&from=&limit=&offset=` | Public                           | Upcoming, not-cancelled events, soonest first. `q` searches title, description, and club name |
-| ⬜     | GET    | `/api/events/:id`                                       | Public                           | Includes club info and counts of going/interested                                             |
-| ⬜     | POST   | `/api/clubs/:clubId/events`                             | Owner, Admin, Editor             |                                                                                               |
-| ⬜     | PATCH  | `/api/events/:id`                                       | That club's Owner, Admin, Editor |                                                                                               |
-| ⬜     | POST   | `/api/events/:id/cancel`                                | That club's Owner, Admin, Editor | Sets `cancelledAt`                                                                            |
+| Status | Method | Path                                                    | Who                              | Notes                                                                                                                                 |
+| ------ | ------ | ------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| ✅     | GET    | `/api/events?q=&category=&clubId=&from=&limit=&offset=` | Public                           | Upcoming, not-cancelled events, soonest first. `q` searches title, description, and club name                                         |
+| ✅     | GET    | `/api/events/:id`                                       | Public                           | Includes club info. Also returns past/cancelled events (check `cancelledAt`). Going/interested counts: TODO, once `event_rsvp` exists |
+| ⬜     | POST   | `/api/clubs/:clubId/events`                             | Owner, Admin, Editor             |                                                                                                                                       |
+| ⬜     | PATCH  | `/api/events/:id`                                       | That club's Owner, Admin, Editor |                                                                                                                                       |
+| ⬜     | POST   | `/api/events/:id/cancel`                                | That club's Owner, Admin, Editor | Sets `cancelledAt`                                                                                                                    |
 
 ## RSVPs, saves, and the dashboard
 
