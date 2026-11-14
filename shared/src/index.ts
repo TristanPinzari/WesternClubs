@@ -61,13 +61,23 @@ export interface Paginated<T> {
 
 // ---- Events (GET /api/events, GET /api/events/:id) ----
 
+// Forms often send empty fields (e.g. ?q=&category=). Treat "" (or just spaces) as
+// "not set", so it means "no filter" instead of failing validation with a 400.
+// z.preprocess runs this BEFORE the real schema checks the value.
+const emptyAsUndefined = <T extends z.ZodType>(schema: T) =>
+  z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() === "" ? undefined : value,
+    schema,
+  );
+
 export const eventListQuerySchema = z.object({
-  q: z.string().trim().min(1).optional(), // searches title, description, and club name
-  category: z.enum(EVENT_CATEGORIES).optional(),
-  clubId: z.uuid().optional(),
-  from: z.coerce.date().optional(), // only events starting at/after this; defaults to now
-  limit: z.coerce.number().int().min(1).max(100).default(20),
-  offset: z.coerce.number().int().min(0).default(0),
+  q: emptyAsUndefined(z.string().trim().optional()), // searches title, description, and club name
+  category: emptyAsUndefined(z.enum(EVENT_CATEGORIES).optional()),
+  clubId: emptyAsUndefined(z.uuid().optional()),
+  from: emptyAsUndefined(z.coerce.date().optional()), // only events at/after this (never before now)
+  limit: emptyAsUndefined(z.coerce.number().int().min(1).max(100).default(20)),
+  offset: emptyAsUndefined(z.coerce.number().int().min(0).default(0)),
 });
 export type EventListQuery = z.infer<typeof eventListQuerySchema>;
 
