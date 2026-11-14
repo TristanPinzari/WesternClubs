@@ -1,7 +1,7 @@
 // WHAT: Fills the database with demo data: `npm run db:seed`. Safe to run more than once.
 // WITHOUT IT: Everyone's local database (and the demo) would start empty, and you'd
 //   have to create test clubs and events by hand.
-import { inArray } from "drizzle-orm";
+import { and, eq, inArray } from "drizzle-orm";
 import { db } from "./index";
 import { club, event } from "./schema";
 
@@ -101,17 +101,38 @@ const events: (typeof event.$inferInsert)[] = [
   },
 ];
 
-// Events have no natural unique key (like club.slug), so skip any whose
-// (club, title) already exists. That keeps this script safe to run more than once.
-const existing = await db
-  .select({ clubId: event.clubId, title: event.title })
-  .from(event);
-const newEvents = events.filter(
-  (e) => !existing.some((x) => x.clubId === e.clubId && x.title === e.title),
-);
-if (newEvents.length > 0) await db.insert(event).values(newEvents);
+// "Upsert" each seed event (update it if it exists, insert it if not), matched on
+// (club, title). Updating matters: if we just skipped existing events, re-seeding in two
+// weeks would leave their old dates in place and the feed would be empty.
+//
+// We match in code rather than with a unique index on (club_id, title) +
+// onConflictDoUpdate, because that index would also apply to real clubs, and a club
+// should be able to post two events with the same title (e.g. a weekly "General Meeting").
+let inserted = 0;
+let refreshed = 0;
+for (const e of events) {
+  // Explicit nulls so re-seeding also clears fields, e.g. un-cancels an event that was
+  // cancelled while testing. (Drizzle skips `undefined` in .set(), but writes null.)
+  const values = {
+    endsAt: null,
+    cancelledAt: null,
+    ...e,
+    updatedAt: new Date(),
+  };
+  const updated = await db
+    .update(event)
+    .set(values)
+    .where(and(eq(event.clubId, e.clubId), eq(event.title, e.title)))
+    .returning({ id: event.id });
+  if (updated.length > 0) {
+    refreshed++;
+  } else {
+    await db.insert(event).values(values);
+    inserted++;
+  }
+}
 
 console.log(
-  `Seeded ${clubs.length} clubs, ${newEvents.length} new events (${events.length - newEvents.length} already existed)`,
+  `Seeded ${clubs.length} clubs; events: ${inserted} inserted, ${refreshed} refreshed`,
 );
 process.exit(0);
