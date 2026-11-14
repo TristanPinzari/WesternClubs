@@ -3,6 +3,8 @@
 //   database match this file.
 // WITHOUT IT: There would be no tables, and Drizzle couldn't type-check any query.
 import {
+  index,
+  integer,
   pgEnum,
   pgTable,
   primaryKey,
@@ -10,7 +12,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
-import { CLUB_ROLES } from "@orbit/shared";
+import { CLUB_ROLES, EVENT_CATEGORIES } from "@orbit/shared";
 import { user } from "./auth-schema";
 
 // Drizzle docs: https://orm.drizzle.team/docs/sql-schema-declaration
@@ -78,21 +80,39 @@ export const clubMember = pgTable(
 //   - createdAt, updatedAt
 
 // event: posted by a club
-//   - id: uuid PK
-//   - clubId: FK -> club (cascade)
-//   - createdById: text FK -> user, optional (set null if that user is deleted)
-//   - title: text, required
-//   - description: text, default ""
-//   - category: enum from EVENT_CATEGORIES
-//   - startsAt: timestamp, required; endsAt: timestamp, optional
-//   - location: text, default ""
-//   - priceCents: integer, default 0          (store money as cents, never floats)
-//   - eligibility: text, default ""
-//   - registrationUrl: text, optional
-//   - imageKey: text, optional                (S3 key, like club.logoKey)
-//   - cancelledAt: timestamp, optional        (null = not cancelled)
-//   - createdAt, updatedAt
-//   TODO(advanced): add indexes on startsAt and clubId, since we filter/sort by them a lot.
+export const eventCategory = pgEnum("event_category", EVENT_CATEGORIES);
+
+export const event = pgTable(
+  "event",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clubId: uuid("club_id")
+      .notNull()
+      .references(() => club.id, { onDelete: "cascade" }), // delete club -> delete its events
+    // Optional: if the exec who posted it deletes their account, keep the event.
+    createdById: text("created_by_id").references(() => user.id, {
+      onDelete: "set null",
+    }),
+    title: text("title").notNull(),
+    description: text("description").notNull().default(""),
+    category: eventCategory("category").notNull(),
+    startsAt: ts("starts_at").notNull(),
+    endsAt: ts("ends_at"),
+    location: text("location").notNull().default(""),
+    priceCents: integer("price_cents").notNull().default(0), // money as cents, never floats
+    eligibility: text("eligibility").notNull().default(""),
+    registrationUrl: text("registration_url"),
+    imageKey: text("image_key"), // S3 key, like club.logoKey
+    cancelledAt: ts("cancelled_at"), // null = not cancelled
+    createdAt: ts("created_at").notNull().defaultNow(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    // We filter and sort by these on almost every request, so index them.
+    index("event_starts_at_idx").on(t.startsAt),
+    index("event_club_id_idx").on(t.clubId),
+  ],
+);
 
 // event_rsvp: a user's "Interested" / "Going" on an event
 //   - eventId: FK -> event (cascade); userId: FK -> user (cascade)
