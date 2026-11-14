@@ -56,7 +56,10 @@ eventsRouter.get("/", async (req, res) => {
   //    only apply when they were given.
   const search = query.q ? `%${query.q}%` : undefined;
   const where = and(
-    gte(event.startsAt, query.from ?? new Date()), // upcoming only
+    // Always upcoming-only. `from` can only narrow this further (e.g. "from next
+    // Monday"), never widen it: ?from=2000-01-01 must not return past events.
+    gte(event.startsAt, new Date()),
+    query.from ? gte(event.startsAt, query.from) : undefined,
     isNull(event.cancelledAt), // not cancelled
     query.category ? eq(event.category, query.category) : undefined,
     query.clubId ? eq(event.clubId, query.clubId) : undefined,
