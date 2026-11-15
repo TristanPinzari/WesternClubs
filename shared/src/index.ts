@@ -35,6 +35,20 @@ export type AttendancePurpose = (typeof ATTENDANCE_PURPOSES)[number];
 export const CONNECTION_STATUSES = ["pending", "accepted"] as const;
 export type ConnectionStatus = (typeof CONNECTION_STATUSES)[number];
 
+// ---- Sign-up is restricted to Western students ----
+
+export const ALLOWED_EMAIL_DOMAIN = "uwo.ca";
+export const EMAIL_DOMAIN_ERROR = `Sign-up is limited to Western students with an @${ALLOWED_EMAIL_DOMAIN} email address.`;
+
+// True only if the part after the LAST "@" is exactly "uwo.ca" (any capitalization).
+// Compares the whole domain, so "x@uwo.ca.evil.com" and "x@notuwo.ca" are rejected.
+// The server enforces this (server/src/auth.ts); the frontend can use it too, to show
+// the error before submitting.
+export function isAllowedEmail(email: string): boolean {
+  const domain = email.trim().toLowerCase().split("@").pop();
+  return domain === ALLOWED_EMAIL_DOMAIN;
+}
+
 // ---- EXAMPLE: validating query params (used by GET /api/clubs) ----
 
 export const clubListQuerySchema = z.object({
