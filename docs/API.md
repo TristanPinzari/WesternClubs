@@ -16,12 +16,12 @@ Request validation schemas and response types go in `shared/src/index.ts`.
 
 ## Auth (handled by Better Auth, nothing to build)
 
-| Method | Path                      | Notes                                                                                     |
-| ------ | ------------------------- | ----------------------------------------------------------------------------------------- |
-| POST   | `/api/auth/sign-up/email` | `{ name, email, password }`. TODO: reject non-`@uwo.ca` emails (see `server/src/auth.ts`) |
-| POST   | `/api/auth/sign-in/email` | `{ email, password }`                                                                     |
-| POST   | `/api/auth/sign-out`      |                                                                                           |
-| GET    | `/api/auth/get-session`   | Current user, or `null`                                                                   |
+| Method | Path                      | Notes                                                                                                     |
+| ------ | ------------------------- | --------------------------------------------------------------------------------------------------------- |
+| POST   | `/api/auth/sign-up/email` | `{ name, email, password }`. Non-`@uwo.ca` emails get 400 with `{ message }` (`isAllowedEmail` in shared) |
+| POST   | `/api/auth/sign-in/email` | `{ email, password }`                                                                                     |
+| POST   | `/api/auth/sign-out`      |                                                                                                           |
+| GET    | `/api/auth/get-session`   | Current user, or `null`                                                                                   |
 
 On the frontend, use `authClient` in `client/src/lib/auth-client.ts` rather than calling these directly.
 
