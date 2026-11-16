@@ -31,7 +31,7 @@ On the frontend, use `authClient` in `client/src/lib/auth-client.ts` rather than
 | ------ | ------------ | --------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------- |
 | ✅     | GET          | `/api/clubs?q=&limit=&offset=`          | Public                    | Search and list clubs                                                              |
 | ✅     | GET          | `/api/clubs/:slug`                      | Public                    | Club details                                                                       |
-| ⬜     | POST         | `/api/clubs`                            | Signed in                 | Creator becomes **owner**. Use a transaction                                       |
+| ✅     | POST         | `/api/clubs`                            | Signed in                 | `{ name, description? }`. Creator becomes **owner**. 409 if the name is taken      |
 | ⬜     | PATCH        | `/api/clubs/:clubId`                    | Owner, Admin              | Name, description, logo, links                                                     |
 | ⬜     | DELETE       | `/api/clubs/:clubId`                    | Owner                     |                                                                                    |
 | ⬜     | GET          | `/api/clubs/:clubId/members`            | Public                    | Execs and their roles                                                              |
