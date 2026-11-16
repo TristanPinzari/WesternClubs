@@ -4,6 +4,7 @@
 import { NavLink, Route, Routes } from "react-router";
 import ClubsPage from "./pages/ClubsPage";
 import HomePage from "./pages/HomePage";
+import EventDetailPage from "./pages/EventDetailPage";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? "font-semibold text-violet-700" : "text-gray-600";
@@ -11,7 +12,7 @@ const navLinkClass = ({ isActive }: { isActive: boolean }) =>
 export default function App() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      <header className="sticky top-0 border-b border-gray-200 bg-white">
+      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
         <nav className="mx-auto flex max-w-2xl items-center gap-6 px-4 py-3">
           <span className="text-lg font-bold text-violet-700">Orbit</span>
           <NavLink to="/" end className={navLinkClass}>
@@ -27,8 +28,10 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/clubs" element={<ClubsPage />} />
+          {/* :id becomes useParams().id on the detail page; cards link here. */}
+          <Route path="/events/:id" element={<EventDetailPage />} />
           {/* TODO: add pages as you build them, e.g.
-              /events/:id, /clubs/:slug, /sign-in, /sign-up, /me (dashboard), /profile/:id */}
+              /clubs/:slug, /sign-in, /sign-up, /me (dashboard), /profile/:id */}
         </Routes>
       </main>
     </div>
