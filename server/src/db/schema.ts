@@ -17,7 +17,13 @@ import {
   uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { CLUB_ROLES, EVENT_CATEGORIES, type Links } from "@orbit/shared";
+import {
+  ATTENDANCE_PURPOSES,
+  CLUB_ROLES,
+  EVENT_CATEGORIES,
+  RSVP_STATUSES,
+  type Links,
+} from "@orbit/shared";
 import { user } from "./auth-schema";
 
 // Drizzle docs: https://orm.drizzle.team/docs/sql-schema-declaration
@@ -143,14 +149,40 @@ export const profile = pgTable("profile", {
 });
 
 // event_rsvp: a user's "Interested" / "Going" on an event
-//   - eventId: FK -> event (cascade); userId: FK -> user (cascade)
-//   - composite PK (eventId, userId)          (one RSVP per user per event)
-//   - status: enum from RSVP_STATUSES
-//   - showOnAttendeeList: boolean, default TRUE (visible unless the student turns it
-//       off, i.e. RSVPs anonymously)
-//   - purpose: enum from ATTENDANCE_PURPOSES, optional
-//   - lookingForBuddy: boolean, default false
-//   - createdAt, updatedAt
+export const rsvpStatus = pgEnum("rsvp_status", RSVP_STATUSES);
+export const attendancePurpose = pgEnum(
+  "attendance_purpose",
+  ATTENDANCE_PURPOSES,
+);
+
+export const eventRsvp = pgTable(
+  "event_rsvp",
+  {
+    eventId: uuid("event_id")
+      .notNull()
+      .references(() => event.id, { onDelete: "cascade" }), // delete event -> delete its RSVPs
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }), // delete account -> delete their RSVPs
+    status: rsvpStatus("status").notNull(),
+    // Visible by default. false = RSVP'd anonymously: counted, but never named.
+    showOnAttendeeList: boolean("show_on_attendee_list")
+      .notNull()
+      .default(true),
+    purpose: attendancePurpose("purpose"), // optional: why you're going
+    lookingForBuddy: boolean("looking_for_buddy").notNull().default(false),
+    createdAt: ts("created_at").notNull().defaultNow(),
+    updatedAt: ts("updated_at").notNull().defaultNow(),
+  },
+  (t) => [
+    // One RSVP per user per event. Changing "Interested" to "Going" updates this row
+    // instead of adding a second one, so nobody is counted twice.
+    primaryKey({ columns: [t.eventId, t.userId] }),
+    // The PK already makes "RSVPs for this event" fast. This makes "my RSVPs"
+    // (the dashboard) fast too.
+    index("event_rsvp_user_id_idx").on(t.userId),
+  ],
+);
 
 // saved_event: bookmarks
 //   - userId, eventId, composite PK, both FKs cascade; createdAt

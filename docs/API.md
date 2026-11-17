@@ -68,13 +68,13 @@ Rules worth enforcing:
 
 ## Events
 
-| Status | Method | Path                                                    | Who                              | Notes                                                                                                                                 |
-| ------ | ------ | ------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
-| ✅     | GET    | `/api/events?q=&category=&clubId=&from=&limit=&offset=` | Public                           | Upcoming, not-cancelled events, soonest first. `q` searches title, description, and club name                                         |
-| ✅     | GET    | `/api/events/:id`                                       | Public                           | Includes club info. Also returns past/cancelled events (check `cancelledAt`). Going/interested counts: TODO, once `event_rsvp` exists |
-| ✅     | POST   | `/api/clubs/:clubId/events`                             | Owner, Admin, Editor             | `createEventSchema`. Title, category, startsAt required. Must start in the future. Returns 201 with `EventDetail`                     |
-| ✅     | PATCH  | `/api/events/:id`                                       | That club's Owner, Admin, Editor | `updateEventSchema`: send only changed fields (`null` clears). Can't move clubs. 409 if cancelled. Returns `EventDetail`              |
-| ✅     | POST   | `/api/events/:id/cancel`                                | That club's Owner, Admin, Editor | Sets `cancelledAt`. Permanent; cancelling twice keeps the first time. Returns `EventDetail`                                           |
+| Status | Method | Path                                                    | Who                              | Notes                                                                                                                                      |
+| ------ | ------ | ------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| ✅     | GET    | `/api/events?q=&category=&clubId=&from=&limit=&offset=` | Public                           | Upcoming, not-cancelled events, soonest first. `q` searches title, description, and club name                                              |
+| ✅     | GET    | `/api/events/:id`                                       | Public                           | Includes club info. Also returns past/cancelled events (check `cancelledAt`). Going/interested counts come from `GET /api/events/:id/rsvp` |
+| ✅     | POST   | `/api/clubs/:clubId/events`                             | Owner, Admin, Editor             | `createEventSchema`. Title, category, startsAt required. Must start in the future. Returns 201 with `EventDetail`                          |
+| ✅     | PATCH  | `/api/events/:id`                                       | That club's Owner, Admin, Editor | `updateEventSchema`: send only changed fields (`null` clears). Can't move clubs. 409 if cancelled. Returns `EventDetail`                   |
+| ✅     | POST   | `/api/events/:id/cancel`                                | That club's Owner, Admin, Editor | Sets `cancelledAt`. Permanent; cancelling twice keeps the first time. Returns `EventDetail`                                                |
 
 For `PATCH /api/events/:id` and `POST /api/events/:id/cancel`, look up the event's **own** `clubId` in the database, and check the user's role in _that_ club. Never trust a `clubId` sent in the request body.
 
@@ -106,14 +106,15 @@ The frontend shows the reason on the card ("From a club you follow", "People you
 
 ## RSVPs, saves, and the dashboard
 
-| Status | Method       | Path                        | Who       | Notes                                                                            |
-| ------ | ------------ | --------------------------- | --------- | -------------------------------------------------------------------------------- |
-| ⬜     | PUT          | `/api/events/:id/rsvp`      | Signed in | `{ status, showOnAttendeeList, purpose?, lookingForBuddy? }`. Creates or updates |
-| ⬜     | DELETE       | `/api/events/:id/rsvp`      | Signed in |                                                                                  |
-| ⬜     | GET          | `/api/events/:id/attendees` | Signed in | **Only** users with `showOnAttendeeList = true` and a public profile             |
-| ⬜     | PUT / DELETE | `/api/events/:id/save`      | Signed in | Save or unsave                                                                   |
-| ⬜     | GET          | `/api/me/events`            | Signed in | Dashboard: my RSVPs and saved events, upcoming first                             |
-| ✅     | GET          | `/api/me/clubs`             | Signed in | `MyClub[]`: clubs I'm an exec of, with my `role`, A to Z                         |
+| Status | Method       | Path                        | Who       | Notes                                                                                                         |
+| ------ | ------------ | --------------------------- | --------- | ------------------------------------------------------------------------------------------------------------- |
+| ✅     | GET          | `/api/events/:id/rsvp`      | Public    | `{ goingCount, interestedCount, mine }`. Counts include anonymous RSVPs; `mine` is `null` when signed out     |
+| ✅     | PUT          | `/api/events/:id/rsvp`      | Signed in | `{ status, showOnAttendeeList?, purpose?, lookingForBuddy? }`. Creates or updates. 400 if cancelled or ended  |
+| ✅     | DELETE       | `/api/events/:id/rsvp`      | Signed in | 204, even if you had no RSVP                                                                                  |
+| ✅     | GET          | `/api/events/:id/attendees` | Signed in | **Only** users with `showOnAttendeeList = true`. Public-profile filter: TODO (the `profile` table now exists) |
+| ⬜     | PUT / DELETE | `/api/events/:id/save`      | Signed in | Save or unsave                                                                                                |
+| ⬜     | GET          | `/api/me/events`            | Signed in | Dashboard: my RSVPs and saved events, upcoming first                                                          |
+| ✅     | GET          | `/api/me/clubs`             | Signed in | `MyClub[]`: clubs I'm an exec of, with my `role`, A to Z                                                      |
 
 **RSVPs are visible by default, with an option to RSVP anonymously.** `showOnAttendeeList` defaults to `true`. In the UI, show a toggle labelled "Show me on the attendee list" **inside the RSVP step itself, switched on**, so students see it every time and can turn it off before confirming. Students with a non-public profile never appear, whatever the toggle says.
 

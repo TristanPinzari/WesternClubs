@@ -26,8 +26,8 @@ You'll build one complete feature through every layer: the database table, the A
 
 ## 1. Sign up and sign in pages
 
-- [ ] `/sign-up` and `/sign-in` pages using `authClient` (examples in `client/src/lib/auth-client.ts`)
-- [ ] Show the signed-in user's name in the header, with a sign-out button
+- [x] `/sign-up` and `/sign-in` pages using `authClient` (examples in `client/src/lib/auth-client.ts`)
+- [x] Show the signed-in user's name in the header, with a sign-out button
 - [ ] Look in `db:studio`: where did your new user go? (the `user` table)
 
 ## 2. The RSVP table (wait until Naksh has added the `event` table)
@@ -37,15 +37,15 @@ You'll build one complete feature through every layer: the database table, the A
 
 ## 3. The RSVP API
 
-- [ ] Create `server/src/routes/rsvps.ts`
-- [ ] `PUT /api/events/:id/rsvp` and `DELETE /api/events/:id/rsvp`. Both need `requireAuth`.
+- [x] Create `server/src/routes/rsvps.ts`
+- [x] `PUT /api/events/:id/rsvp` and `DELETE /api/events/:id/rsvp`. Both need `requireAuth`.
 - [ ] `PUT` / `DELETE /api/events/:id/save`
-- [ ] You'll need an `apiPut` / `apiDelete` helper in `client/src/lib/api.ts` (see the TODO there)
+- [x] You'll need an `apiPut` / `apiDelete` helper in `client/src/lib/api.ts` (see the TODO there)
 
 ## 4. The buttons
 
 - [ ] "Interested", "Going", and "Save" buttons on Aryan's event detail page (coordinate with Aryan)
-- [ ] Ask whether to show you on the attendee list (`showOnAttendeeList`) and why you're going (`purpose`)
+- [x] Ask whether to show you on the attendee list (`showOnAttendeeList`) and why you're going (`purpose`)
 
 ## 5. The dashboard
 
@@ -54,7 +54,7 @@ You'll build one complete feature through every layer: the database table, the A
 
 ## 6. Stretch goals
 
-- [ ] `GET /api/events/:id/attendees` and an attendee list on the event page. Never show people who RSVP'd anonymously!
+- [x] `GET /api/events/:id/attendees` and an attendee list on the event page. Never show people who RSVP'd anonymously!
 
 ## Tips
 
