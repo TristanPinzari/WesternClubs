@@ -12,6 +12,8 @@
     "db:seed": "tsx --env-file-if-exists=.env src/db/seed.ts"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.1170.0",
+    "@aws-sdk/s3-request-presigner": "^3.1170.0",
     "@orbit/shared": "^0.0.0",
     "better-auth": "^1.7.22",
     "drizzle-orm": "^0.45.4",

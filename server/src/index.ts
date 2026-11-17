@@ -8,6 +8,7 @@ import { env } from "./env";
 import { errorHandler, loadSession } from "./middleware";
 import { clubsRouter } from "./routes/clubs";
 import { eventsRouter } from "./routes/events";
+import { uploadsRouter } from "./routes/uploads";
 
 const app = express();
 
@@ -23,6 +24,7 @@ app.get("/api/health", (_req, res) => {
 
 app.use("/api/clubs", clubsRouter);
 app.use("/api/events", eventsRouter);
+app.use("/api/uploads", uploadsRouter);
 // TODO: profiles, rsvps, connections... (see docs/API.md)
 
 app.use(errorHandler);

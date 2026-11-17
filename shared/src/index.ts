@@ -134,6 +134,52 @@ export const createClubSchema = z.object({
 });
 export type CreateClubInput = z.infer<typeof createClubSchema>;
 
+// ---- Image uploads (POST /api/uploads) ----
+
+export const UPLOAD_FOLDERS = ["clubs", "events", "users"] as const;
+export type UploadFolder = (typeof UPLOAD_FOLDERS)[number];
+
+// No SVG on purpose: an SVG file can contain JavaScript, which runs when someone opens
+// the image's URL. Use these for the file input too: <input accept={...join(",")}>.
+export const IMAGE_CONTENT_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+] as const;
+export type ImageContentType = (typeof IMAGE_CONTENT_TYPES)[number];
+
+export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
+
+export const uploadRequestSchema = z.object({
+  folder: z.enum(UPLOAD_FOLDERS),
+  contentType: z.enum(IMAGE_CONTENT_TYPES), // the file's type, i.e. file.type
+  size: z // the file's size in bytes, i.e. file.size
+    .number()
+    .int()
+    .min(1)
+    .max(MAX_UPLOAD_BYTES, "Images must be 5 MB or smaller"),
+});
+export type UploadRequest = z.infer<typeof uploadRequestSchema>;
+
+// Upload flow: PUT the file to uploadUrl (with the same Content-Type header), then save
+// `key` on the club/event, or `publicUrl` as your profile picture.
+export interface UploadResponse {
+  key: string; // e.g. "events/3f2a...c9.png"
+  uploadUrl: string; // expires after 5 minutes
+  publicUrl: string; // where the image can be viewed once uploaded
+}
+
+// Accepts only keys in the exact shape POST /api/uploads makes for this folder, e.g.
+// "events/<uuid>.png". So a club can't use a key from another folder, or make one up.
+export const uploadKeySchema = (folder: UploadFolder) =>
+  z
+    .string()
+    .regex(
+      new RegExp(`^${folder}/[0-9a-f-]{36}\\.(jpg|png|webp|gif)$`),
+      "Invalid image",
+    );
+
 // ---- Creating and editing events ----
 
 // For optional fields that can be cleared: a form sends "" for an empty box, which
@@ -160,9 +206,7 @@ const eventFields = z.object({
   registrationUrl: emptyAsNull(z.url({ protocol: /^https?$/ }).max(2000)),
   // From POST /api/uploads. Must be in the events/ folder, so nobody can point their
   // event's image at another club's logo or someone's profile picture.
-  imageKey: emptyAsNull(
-    z.string().startsWith("events/", "Invalid image").max(200),
-  ),
+  imageKey: emptyAsNull(uploadKeySchema("events")),
 });
 
 // POST /api/clubs/:clubId/events. Title, category, and startsAt are required; anything
