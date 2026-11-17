@@ -4,19 +4,24 @@
 import {
   clubListQuerySchema,
   createClubSchema,
+  createEventSchema,
+  updateClubSchema,
+  type ClubDetail,
   type ClubSummary,
   type Paginated,
 } from "@orbit/shared";
-import { count, eq, ilike, like, or } from "drizzle-orm";
+import { and, count, eq, ilike, like, or } from "drizzle-orm";
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "../db";
-import { club, clubMember } from "../db/schema";
-import { requireAuth } from "../middleware";
+import { club, clubFollow, clubMember, event } from "../db/schema";
+import { requireAuth, requireClubRole } from "../middleware";
 import { mediaUrl } from "../s3";
+import { endsAfterStart, getEventDetail } from "./events";
 
 export const clubsRouter = Router();
 
-function toClubSummary(row: typeof club.$inferSelect): ClubSummary {
+export function toClubSummary(row: typeof club.$inferSelect): ClubSummary {
   return {
     id: row.id,
     name: row.name,
@@ -24,6 +29,22 @@ function toClubSummary(row: typeof club.$inferSelect): ClubSummary {
     description: row.description,
     logoUrl: mediaUrl(row.logoKey),
   };
+}
+
+function toClubDetail(
+  row: typeof club.$inferSelect,
+  isFollowing: boolean,
+): ClubDetail {
+  return { ...toClubSummary(row), links: row.links, isFollowing };
+}
+
+async function isFollowingClub(clubId: string, userId: string | undefined) {
+  if (!userId) return false; // signed out
+  const [row] = await db
+    .select({ clubId: clubFollow.clubId })
+    .from(clubFollow)
+    .where(and(eq(clubFollow.clubId, clubId), eq(clubFollow.userId, userId)));
+  return !!row; // !! turns "a row or undefined" into true/false
 }
 
 // GET /api/clubs?q=ai&limit=20&offset=0
@@ -62,7 +83,7 @@ clubsRouter.get("/:slug", async (req, res) => {
     res.status(404).json({ error: "Club not found" });
     return;
   }
-  res.json(toClubSummary(row));
+  res.json(toClubDetail(row, await isFollowingClub(row.id, req.user?.id)));
 });
 
 // "Western AI Club!" -> "western-ai-club". Accents are stripped ("Café" -> "cafe").
@@ -131,7 +152,7 @@ clubsRouter.post("/", requireAuth, async (req, res) => {
           .values({ clubId: row.id, userId: req.user!.id, role: "owner" });
         return row;
       });
-      res.status(201).json(toClubSummary(created));
+      res.status(201).json(toClubDetail(created, false));
       return;
     } catch (err) {
       // Another request grabbed this slug between findFreeSlug and our insert (two
@@ -142,4 +163,99 @@ clubsRouter.post("/", requireAuth, async (req, res) => {
       throw err; // a real bug, or still colliding after 5 tries: errorHandler -> 500
     }
   }
+});
+
+// POST /api/clubs/:clubId/events  { title, category, startsAt, ... }  -> 201 with the event
+// Any exec of the club (owner, admin, editor). requireClubRole has already checked
+// the user's role in the club from the URL, and that the club exists.
+clubsRouter.post(
+  "/:clubId/events",
+  requireAuth,
+  requireClubRole("owner", "admin", "editor"),
+  async (req, res) => {
+    const input = createEventSchema.parse(req.body);
+    if (input.startsAt <= new Date()) {
+      res.status(400).json({ error: "The event must start in the future" });
+      return;
+    }
+    if (!endsAfterStart(input.startsAt, input.endsAt)) {
+      res.status(400).json({ error: "The event must end after it starts" });
+      return;
+    }
+
+    const [row] = await db
+      .insert(event)
+      .values({ ...input, clubId: req.clubId!, createdById: req.user!.id })
+      .returning({ id: event.id });
+    res.status(201).json(await getEventDetail(row.id));
+  },
+);
+
+// PATCH /api/clubs/:clubId  { name?, description?, logoKey?, links? }  -> the club
+// Owner and admin only (editors can post events, but not change the club itself).
+// The slug never changes, so links people have shared keep working after a rename.
+clubsRouter.patch(
+  "/:clubId",
+  requireAuth,
+  requireClubRole("owner", "admin"),
+  async (req, res) => {
+    const changes = updateClubSchema.parse(req.body);
+    const [row] = await db
+      .update(club)
+      .set({ ...changes, updatedAt: new Date() })
+      .where(eq(club.id, req.clubId!))
+      .returning();
+    res.json(toClubDetail(row, await isFollowingClub(row.id, req.user!.id)));
+  },
+);
+
+// DELETE /api/clubs/:clubId  -> 204
+// Owner only. Permanent: the database also deletes the club's memberships and events
+// (onDelete: "cascade" in schema.ts).
+clubsRouter.delete(
+  "/:clubId",
+  requireAuth,
+  requireClubRole("owner"),
+  async (req, res) => {
+    await db.delete(club).where(eq(club.id, req.clubId!));
+    res.status(204).end();
+  },
+);
+
+// PUT /api/clubs/:clubId/follow  -> 204    (follow)
+// DELETE /api/clubs/:clubId/follow  -> 204 (unfollow)
+// Both are safe to repeat: following twice, or unfollowing a club you don't follow,
+// changes nothing. That's why they're PUT/DELETE ("make it so") rather than POST.
+clubsRouter.put("/:clubId/follow", requireAuth, async (req, res) => {
+  const clubId = z.uuid().safeParse(req.params.clubId);
+  const [found] = clubId.success
+    ? await db
+        .select({ id: club.id })
+        .from(club)
+        .where(eq(club.id, clubId.data))
+    : [];
+  if (!found) {
+    res.status(404).json({ error: "Club not found" });
+    return;
+  }
+  await db
+    .insert(clubFollow)
+    .values({ userId: req.user!.id, clubId: found.id })
+    .onConflictDoNothing(); // already following: fine, nothing to do
+  res.status(204).end();
+});
+
+clubsRouter.delete("/:clubId/follow", requireAuth, async (req, res) => {
+  const clubId = z.uuid().safeParse(req.params.clubId);
+  if (clubId.success) {
+    await db
+      .delete(clubFollow)
+      .where(
+        and(
+          eq(clubFollow.clubId, clubId.data),
+          eq(clubFollow.userId, req.user!.id),
+        ),
+      );
+  }
+  res.status(204).end();
 });

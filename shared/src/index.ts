@@ -131,5 +131,231 @@ export const createClubSchema = z.object({
 });
 export type CreateClubInput = z.infer<typeof createClubSchema>;
 
-// TODO: add schemas and types as you build each endpoint in docs/API.md, e.g.
-//   - createEventSchema      (title, category, startsAt, ... see the event table notes)
+// ---- Image uploads (POST /api/uploads) ----
+
+export const UPLOAD_FOLDERS = ["clubs", "events", "users"] as const;
+export type UploadFolder = (typeof UPLOAD_FOLDERS)[number];
+
+// No SVG on purpose: an SVG file can contain JavaScript, which runs when someone opens
+// the image's URL. Use these for the file input too: <input accept={...join(",")}>.
+export const IMAGE_CONTENT_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+] as const;
+export type ImageContentType = (typeof IMAGE_CONTENT_TYPES)[number];
+
+export const MAX_UPLOAD_BYTES = 5 * 1024 * 1024; // 5 MB
+
+export const uploadRequestSchema = z.object({
+  folder: z.enum(UPLOAD_FOLDERS),
+  contentType: z.enum(IMAGE_CONTENT_TYPES), // the file's type, i.e. file.type
+  size: z // the file's size in bytes, i.e. file.size
+    .number()
+    .int()
+    .min(1)
+    .max(MAX_UPLOAD_BYTES, "Images must be 5 MB or smaller"),
+});
+export type UploadRequest = z.infer<typeof uploadRequestSchema>;
+
+// Upload flow: PUT the file to uploadUrl (with the same Content-Type header), then save
+// `key` on the club/event, or `publicUrl` as your profile picture.
+export interface UploadResponse {
+  key: string; // e.g. "events/3f2a...c9.png"
+  uploadUrl: string; // expires after 5 minutes
+  publicUrl: string; // where the image can be viewed once uploaded
+}
+
+// Accepts only keys in the exact shape POST /api/uploads makes for this folder, e.g.
+// "events/<uuid>.png". So a club can't use a key from another folder, or make one up.
+export const uploadKeySchema = (folder: UploadFolder) =>
+  z
+    .string()
+    .regex(
+      new RegExp(`^${folder}/[0-9a-f-]{36}\\.(jpg|png|webp|gif)$`),
+      "Invalid image",
+    );
+
+// ---- Creating and editing events ----
+
+// For optional fields that can be cleared: a form sends "" for an empty box, which
+// should mean "no value" (null), not "invalid".
+const emptyAsNull = <T extends z.ZodType>(schema: T) =>
+  z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() === "" ? null : value,
+    schema.nullable(),
+  );
+
+// A date sent as a string (or Date). Plain z.coerce.date() would turn null or 0 into
+// Jan 1, 1970 (new Date(null)), silently moving the event into the past.
+const dateInput = z.union([z.string(), z.date()]).pipe(z.coerce.date());
+
+// Every editable field of an event, with its rules.
+const eventFields = z.object({
+  title: z.string().trim().min(1, "Title is required").max(120),
+  description: z.string().trim().max(5000),
+  category: z.enum(EVENT_CATEGORIES),
+  startsAt: dateInput,
+  endsAt: emptyAsNull(dateInput), // null or "" clears it
+  location: z.string().trim().max(200),
+  priceCents: z.number().int().min(0).max(1_000_000), // up to $10,000
+  eligibility: z.string().trim().max(500),
+  // http(s) only. Otherwise someone could save "javascript:..." as the link, and
+  // clicking "Register" on the event page would run their code.
+  registrationUrl: emptyAsNull(z.url({ protocol: /^https?$/ }).max(2000)),
+  // From POST /api/uploads. Must be in the events/ folder, so nobody can point their
+  // event's image at another club's logo or someone's profile picture.
+  imageKey: emptyAsNull(uploadKeySchema("events")),
+});
+
+// POST /api/clubs/:clubId/events. Title, category, and startsAt are required; anything
+// left out gets the database default ("" for text, 0 for price, null for the rest).
+export const createEventSchema = eventFields.partial({
+  description: true,
+  endsAt: true,
+  location: true,
+  priceCents: true,
+  eligibility: true,
+  registrationUrl: true,
+  imageKey: true,
+});
+export type CreateEventInput = z.infer<typeof createEventSchema>;
+
+// PATCH /api/events/:id. Send only the fields you want to change. There's no clubId
+// field, so an event can never be moved to another club (unknown keys are dropped).
+export const updateEventSchema = eventFields.partial();
+export type UpdateEventInput = z.infer<typeof updateEventSchema>;
+
+// ---- Links (on clubs, and on profiles) ----
+
+export const LINK_KINDS = [
+  "website",
+  "instagram",
+  "linkedin",
+  "discord",
+  "github",
+] as const;
+export type LinkKind = (typeof LINK_KINDS)[number];
+export type Links = Partial<Record<LinkKind, string>>; // e.g. { instagram: "https://..." }
+
+// http(s) only, so a link can never be "javascript:..." (see registrationUrl above).
+const httpUrl = z.url({ protocol: /^https?$/ }).max(500);
+const optionalLink = emptyAsUndefined(httpUrl.optional()); // "" = no link
+
+// Unknown kinds are dropped. Sending links REPLACES all of them, so to remove one,
+// send the object without it.
+export const linksSchema = z.object({
+  website: optionalLink,
+  instagram: optionalLink,
+  linkedin: optionalLink,
+  discord: optionalLink,
+  github: optionalLink,
+});
+
+// ---- Club settings (PATCH /api/clubs/:clubId) and GET /api/me/clubs ----
+
+// GET /api/clubs/:slug and PATCH /api/clubs/:clubId return this.
+export interface ClubDetail extends ClubSummary {
+  links: Links;
+  isFollowing: boolean; // does the signed-in user follow this club? (false if signed out)
+}
+
+// Send only what changed. There's no slug field: renaming keeps the old URL working.
+export const updateClubSchema = z
+  .object({
+    name: z.string().trim().min(2).max(80),
+    description: z.string().trim().max(2000),
+    logoKey: emptyAsNull(uploadKeySchema("clubs")), // null removes the logo
+    links: linksSchema,
+  })
+  .partial();
+export type UpdateClubInput = z.infer<typeof updateClubSchema>;
+
+// A club I'm an exec of. Use `role` to decide which buttons to show (the server
+// still checks permissions on every request).
+export interface MyClub extends ClubSummary {
+  role: ClubRole;
+}
+
+// ---- Club members (execs) ----
+
+// GET /api/clubs/:clubId/members. Public, so never includes emails.
+export interface ClubMember {
+  userId: string;
+  name: string;
+  image: string | null;
+  role: ClubRole;
+}
+
+// Roles you can give through the members endpoints. "owner" only changes hands
+// through POST /api/clubs/:clubId/transfer-ownership.
+const assignableRole = z.enum(["admin", "editor"]);
+
+// POST /api/clubs/:clubId/members. The person needs an Orbit account already.
+export const addMemberSchema = z.object({
+  email: z.string().trim().toLowerCase().pipe(z.email()),
+  role: assignableRole,
+});
+export type AddMemberInput = z.infer<typeof addMemberSchema>;
+
+// PATCH /api/clubs/:clubId/members/:userId
+export const updateMemberSchema = z.object({ role: assignableRole });
+export type UpdateMemberInput = z.infer<typeof updateMemberSchema>;
+
+// POST /api/clubs/:clubId/transfer-ownership
+export const transferOwnershipSchema = z.object({ userId: z.string().min(1) });
+export type TransferOwnershipInput = z.infer<typeof transferOwnershipSchema>;
+
+// ---- Following ----
+
+// A student as shown in lists: just enough for a name and a picture.
+export interface UserSummary {
+  id: string;
+  name: string;
+  image: string | null; // profile picture URL
+}
+
+// GET /api/me/following. Only you can see who you follow. There's deliberately no
+// endpoint for followers or follower counts.
+export interface MyFollowing {
+  clubs: ClubSummary[];
+  users: UserSummary[];
+}
+
+// ---- Profiles ----
+
+// GET /api/profiles/:userId. Your name and picture come from your account (Better Auth's
+// user table); the rest from your profile. Fields you haven't filled in are null/empty.
+export interface Profile {
+  userId: string;
+  name: string;
+  image: string | null; // profile picture URL
+  program: string | null;
+  yearOfStudy: number | null;
+  bio: string | null;
+  interests: EventCategory[];
+  links: Links;
+  isPublic: boolean; // only ever false when viewing your own profile
+  isFollowing: boolean; // do I follow this person? (always false on your own profile)
+}
+
+// PUT /api/me/profile. Send only the fields you're changing; the rest stay as they
+// were (so onboarding can send just { interests }). "" or null clears a text field.
+// Making your profile private (isPublic: false) also removes all your followers.
+export const updateProfileSchema = z
+  .object({
+    program: emptyAsNull(z.string().trim().max(100)),
+    yearOfStudy: z.number().int().min(1).max(10).nullable(),
+    bio: emptyAsNull(z.string().trim().max(1000)),
+    interests: z
+      .array(z.enum(EVENT_CATEGORIES)) // only real categories, so the feed can match them
+      .transform((list) => [...new Set(list)]), // drop duplicates
+    links: linksSchema,
+    isPublic: z.boolean(),
+  })
+  .partial();
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
+// TODO: add schemas and types as you build each endpoint in docs/API.md

@@ -2,17 +2,22 @@
 //   single source of truth for the database's shape; `npm run db:push` makes the real
 //   database match this file.
 // WITHOUT IT: There would be no tables, and Drizzle couldn't type-check any query.
+import { sql } from "drizzle-orm";
 import {
+  boolean,
+  check,
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
-import { CLUB_ROLES, EVENT_CATEGORIES } from "@orbit/shared";
+import { CLUB_ROLES, EVENT_CATEGORIES, type Links } from "@orbit/shared";
 import { user } from "./auth-schema";
 
 // Drizzle docs: https://orm.drizzle.team/docs/sql-schema-declaration
@@ -35,6 +40,7 @@ export const club = pgTable("club", {
   slug: text("slug").notNull().unique(), // URL-friendly name, e.g. "western-ai"
   description: text("description").notNull().default(""),
   logoKey: text("logo_key"), // S3 object key, not a full URL; nullable = optional
+  links: jsonb("links").$type<Links>().notNull().default({}), // { instagram: "https://..." }
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });
@@ -59,8 +65,12 @@ export const clubMember = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.clubId, t.userId] }), // a user can only be in a club once
-    // TODO(advanced): enforce "at most one owner per club" in the database.
-    //   Look up: Postgres *partial unique index* and Drizzle's `uniqueIndex().on().where()`.
+    // At most one owner per club. A *partial* unique index: club_id must be unique,
+    // but only among rows WHERE role = 'owner'. So many admins/editors are fine, and the
+    // database refuses a second owner even if an endpoint has a bug.
+    uniqueIndex("club_member_one_owner")
+      .on(t.clubId)
+      .where(sql`${t.role} = 'owner'`),
   ],
 );
 
@@ -69,21 +79,7 @@ export const clubMember = pgTable(
 // Enums for categories, RSVP statuses, etc. already exist in shared/src/index.ts.
 // =============================================================================
 
-// profile: extra student info, one row per user
-//   - userId: text, PRIMARY KEY, FK -> user (cascade)
-//   - program: text, optional
-//   - yearOfStudy: integer, optional
-//   - bio: text, optional
-//   - interests: text array, default empty   (look up Drizzle `.array()`)
-//       Values must come from EVENT_CATEGORIES (a fixed list, NOT free text), so the
-//       "For you" feed can match interests to event categories. Validate with Zod.
-//   - links: jsonb, e.g. { instagram: "...", linkedin: "..." }, default {}
-//   - isPublic: boolean, default true        (controls profile visibility, and whether
-//       others can follow you)
-//   - createdAt, updatedAt
-//   Profile picture: NOT stored here. Use Better Auth's existing `user.image` column,
-//   and store the FULL public image URL in it (not an S3 key like club.logoKey), because
-//   Better Auth returns user.image directly in the session (useSession()).
+// profile: defined below the event table (its `interests` column uses the event_category enum).
 
 // event: posted by a club
 export const eventCategory = pgEnum("event_category", EVENT_CATEGORIES);
@@ -120,6 +116,32 @@ export const event = pgTable(
   ],
 );
 
+// profile: extra student info, one row per user. A user without a row is treated as a
+// public profile with empty fields (most users won't fill it in straight away).
+// Profile picture: NOT stored here. It's Better Auth's `user.image` column, holding the
+// FULL public image URL (not an S3 key like club.logoKey), because Better Auth returns
+// user.image directly in the session (useSession()).
+export const profile = pgTable("profile", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  program: text("program"),
+  yearOfStudy: integer("year_of_study"),
+  bio: text("bio"),
+  // An array of the event_category enum, not free text, so the "For you" feed can match
+  // interests to event categories. The database itself rejects anything else.
+  interests: eventCategory("interests")
+    .array()
+    .notNull()
+    .default(sql`'{}'`),
+  links: jsonb("links").$type<Links>().notNull().default({}),
+  // Controls profile visibility, whether others can follow you, and whether you can
+  // appear on attendee lists.
+  isPublic: boolean("is_public").notNull().default(true),
+  createdAt: ts("created_at").notNull().defaultNow(),
+  updatedAt: ts("updated_at").notNull().defaultNow(),
+});
+
 // event_rsvp: a user's "Interested" / "Going" on an event
 //   - eventId: FK -> event (cascade); userId: FK -> user (cascade)
 //   - composite PK (eventId, userId)          (one RSVP per user per event)
@@ -134,15 +156,38 @@ export const event = pgTable(
 //   - userId, eventId, composite PK, both FKs cascade; createdAt
 
 // club_follow: students following clubs
-//   - userId, clubId, composite PK, both FKs cascade; createdAt
+export const clubFollow = pgTable(
+  "club_follow",
+  {
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    clubId: uuid("club_id")
+      .notNull()
+      .references(() => club.id, { onDelete: "cascade" }),
+    createdAt: ts("created_at").notNull().defaultNow(),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.clubId] })], // can't follow a club twice
+);
 
 // user_follow: students following other students (one-way, no approval, like club_follow)
-//   - followerId: text FK -> user (cascade)   (the person who clicked "Follow")
-//   - followeeId: text FK -> user (cascade)   (the person being followed)
-//   - composite PK (followerId, followeeId)   (can't follow the same person twice)
-//   - createdAt
-//   Rules (enforce in the API): you can't follow yourself, and you can't follow
-//   someone whose profile isn't public.
-//   TODO(advanced): also enforce "can't follow yourself" in the database. Look up:
-//   Postgres CHECK constraint and Drizzle's `check()`.
-//   Note: we deliberately never show follower COUNTS or follower LISTS (see docs/API.md).
+// Rules enforced in the API: you can only follow someone whose profile is public.
+// Note: we deliberately never show follower COUNTS or follower LISTS (see docs/API.md).
+export const userFollow = pgTable(
+  "user_follow",
+  {
+    followerId: text("follower_id") // the person who clicked "Follow"
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    followeeId: text("followee_id") // the person being followed
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: ts("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.followerId, t.followeeId] }), // can't follow someone twice
+    // The database itself refuses a row where someone follows themselves, even if a
+    // future endpoint forgets to check.
+    check("user_follow_not_self", sql`${t.followerId} <> ${t.followeeId}`),
+  ],
+);
