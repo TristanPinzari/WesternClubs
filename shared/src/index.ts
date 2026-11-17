@@ -188,13 +188,17 @@ const emptyAsNull = <T extends z.ZodType>(schema: T) =>
     schema.nullable(),
   );
 
+// A date sent as a string (or Date). Plain z.coerce.date() would turn null or 0 into
+// Jan 1, 1970 (new Date(null)), silently moving the event into the past.
+const dateInput = z.union([z.string(), z.date()]).pipe(z.coerce.date());
+
 // Every editable field of an event, with its rules.
 const eventFields = z.object({
   title: z.string().trim().min(1, "Title is required").max(120),
   description: z.string().trim().max(5000),
   category: z.enum(EVENT_CATEGORIES),
-  startsAt: z.coerce.date(),
-  endsAt: emptyAsNull(z.coerce.date()),
+  startsAt: dateInput,
+  endsAt: emptyAsNull(dateInput), // null or "" clears it
   location: z.string().trim().max(200),
   priceCents: z.number().int().min(0).max(1_000_000), // up to $10,000
   eligibility: z.string().trim().max(500),

@@ -195,6 +195,9 @@ membersRouter.delete(
   },
 );
 
+// Thrown inside the transfer transaction to roll it back.
+class TargetGoneError extends Error {}
+
 // POST /api/clubs/:clubId/transfer-ownership  { userId }  -> ClubMember[]
 // Owner only. The new owner must already be an exec; the old owner becomes an admin.
 membersRouter.post(
@@ -211,35 +214,48 @@ membersRouter.post(
     if (!(await findMember(res, req.clubId!, newOwnerId))) return;
 
     // Both changes or neither: a club must never end up with no owner (or two).
-    const transferred = await db.transaction(async (tx) => {
-      // Step 1: demote me. The `role = 'owner'` condition matters if I send two
-      // transfers at once: the second finds I'm no longer owner and changes nothing.
-      const demoted = await tx
-        .update(clubMember)
-        .set({ role: "admin" })
-        .where(
-          and(
-            eq(clubMember.clubId, req.clubId!),
-            eq(clubMember.userId, me),
-            eq(clubMember.role, "owner"),
-          ),
-        )
-        .returning();
-      if (demoted.length === 0) return false;
+    const transferred = await db
+      .transaction(async (tx) => {
+        // Step 1: demote me. The `role = 'owner'` condition matters if I send two
+        // transfers at once: the second finds I'm no longer owner and changes nothing.
+        const demoted = await tx
+          .update(clubMember)
+          .set({ role: "admin" })
+          .where(
+            and(
+              eq(clubMember.clubId, req.clubId!),
+              eq(clubMember.userId, me),
+              eq(clubMember.role, "owner"),
+            ),
+          )
+          .returning();
+        if (demoted.length === 0) return false;
 
-      // Step 2: promote them. This must come AFTER step 1, or the one-owner index
-      // would briefly see two owners and refuse.
-      await tx
-        .update(clubMember)
-        .set({ role: "owner" })
-        .where(
-          and(
-            eq(clubMember.clubId, req.clubId!),
-            eq(clubMember.userId, newOwnerId),
-          ),
-        );
-      return true;
-    });
+        // Step 2: promote them. This must come AFTER step 1, or the one-owner index
+        // would briefly see two owners and refuse.
+        const promoted = await tx
+          .update(clubMember)
+          .set({ role: "owner" })
+          .where(
+            and(
+              eq(clubMember.clubId, req.clubId!),
+              eq(clubMember.userId, newOwnerId),
+            ),
+          )
+          .returning();
+        // They left (or were removed) after our findMember check above. Throwing undoes
+        // step 1 too, so the club never ends up with no owner.
+        if (promoted.length === 0) throw new TargetGoneError();
+        return true;
+      })
+      .catch((err) => {
+        if (err instanceof TargetGoneError) return "target-gone" as const;
+        throw err;
+      });
+    if (transferred === "target-gone") {
+      res.status(404).json({ error: "That person isn't an exec of this club" });
+      return;
+    }
     if (!transferred) {
       res
         .status(409)
