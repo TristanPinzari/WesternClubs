@@ -58,6 +58,12 @@ Rules worth enforcing:
 - You can't set `role: "owner"` through the members endpoints. Only transfer-ownership does that.
 - The owner can't leave the club without transferring ownership first.
 
+### Club URLs (slugs)
+
+- The slug is created from the name when the club is created. If it's taken, add a number: `western-ai`, `western-ai-2`, `western-ai-3`.
+- **Renaming a club (`PATCH`) changes only `name`. The slug stays the same**, so links people have shared (Instagram bios, posters, group chats) keep working.
+- Letting owners change the slug themselves is a possible future feature, not part of the hackathon.
+
 ## Events
 
 | Status | Method | Path                                                    | Who                              | Notes                                                                                                                                 |
@@ -67,6 +73,23 @@ Rules worth enforcing:
 | ⬜     | POST   | `/api/clubs/:clubId/events`                             | Owner, Admin, Editor             |                                                                                                                                       |
 | ⬜     | PATCH  | `/api/events/:id`                                       | That club's Owner, Admin, Editor |                                                                                                                                       |
 | ⬜     | POST   | `/api/events/:id/cancel`                                | That club's Owner, Admin, Editor | Sets `cancelledAt`                                                                                                                    |
+
+For `PATCH /api/events/:id` and `POST /api/events/:id/cancel`, look up the event's **own** `clubId` in the database, and check the user's role in _that_ club. Never trust a `clubId` sent in the request body.
+
+## "For you" feed
+
+| Status | Method | Path                       | Who       | Notes                                                                                                       |
+| ------ | ------ | -------------------------- | --------- | ----------------------------------------------------------------------------------------------------------- |
+| ⬜     | GET    | `/api/feed?limit=&offset=` | Signed in | Upcoming, not-cancelled events, ranked for the signed-in user. Each item is an `EventSummary` plus `reason` |
+
+Ranking: every event gets the **highest** matching group, then the feed is sorted by group, then soonest first (`ORDER BY score DESC, starts_at, id`, so pagination stays stable):
+
+1. **From a club you follow.** `reason: "followed_club"`
+2. **A person you follow is going or interested.** `reason: "followed_user"`. **Only count RSVPs with `showOnAttendeeList = true`.** Otherwise the feed would reveal anonymous RSVPs.
+3. **Its category is one of your profile interests.** `reason: "interest"`
+4. Everything else. `reason: null`
+
+The frontend shows the reason on the card ("From a club you follow", "People you follow are going"). Don't list _which_ people: names belong on the event's public attendee list only. Signed-out visitors use the normal `GET /api/events` list.
 
 ## RSVPs, saves, and the dashboard
 
@@ -79,27 +102,55 @@ Rules worth enforcing:
 | ⬜     | GET          | `/api/me/events`            | Signed in | Dashboard: my RSVPs and saved events, upcoming first                             |
 | ⬜     | GET          | `/api/me/clubs`             | Signed in | Clubs I'm an exec of, with my role                                               |
 
+**RSVPs are anonymous by default.** `showOnAttendeeList` defaults to `false`, so a student only appears on an attendee list if they turn it on. In the UI, show this as a toggle labelled "Show me on the attendee list", off by default.
+
+**Save is low priority.** "Interested" already covers "keep this on my radar", so build Save last, or drop it if time runs out.
+
 ## Profiles
 
-| Status | Method | Path                    | Who       | Notes                                                  |
-| ------ | ------ | ----------------------- | --------- | ------------------------------------------------------ |
-| ⬜     | GET    | `/api/profiles/:userId` | Signed in | 404 if the profile isn't public (unless it's your own) |
-| ⬜     | PUT    | `/api/me/profile`       | Signed in | Program, year, bio, interests, links, isPublic         |
+| Status | Method | Path                    | Who       | Notes                                                                                                                           |
+| ------ | ------ | ----------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| ⬜     | GET    | `/api/profiles/:userId` | Signed in | Name, picture, program, year, bio, interests, links, plus `isFollowing`. 404 if the profile isn't public (unless it's your own) |
+| ⬜     | PUT    | `/api/me/profile`       | Signed in | Program, year, bio, interests (values from `EVENT_CATEGORIES` only), links, isPublic                                            |
 
-## Connections
+**Profile pictures** are stored in Better Auth's `user.image` column as the **full public URL**. Update it with `authClient.updateUser({ image })` after uploading (see Uploads). Club logos use `club.logoKey`, and event images use `event.imageKey`, which store the S3 key; the API turns those into URLs.
 
-| Status | Method | Path                          | Who                | Notes                                                            |
-| ------ | ------ | ----------------------------- | ------------------ | ---------------------------------------------------------------- |
-| ⬜     | GET    | `/api/connections`            | Signed in          | My accepted connections, plus pending requests sent and received |
-| ⬜     | POST   | `/api/connections`            | Signed in          | `{ userId }`. Can't connect with yourself or send a duplicate    |
-| ⬜     | POST   | `/api/connections/:id/accept` | The addressee only |                                                                  |
-| ⬜     | DELETE | `/api/connections/:id`        | Either person      | Decline, cancel, or remove                                       |
+## Following
+
+Following is **one-way and needs no approval**: follow a club or a person, and their events show up higher in your "For you" feed.
+
+| Status | Method       | Path                        | Who       | Notes                                                                             |
+| ------ | ------------ | --------------------------- | --------- | --------------------------------------------------------------------------------- |
+| ⬜     | PUT / DELETE | `/api/clubs/:clubId/follow` | Signed in | Follow or unfollow a club (also listed under Clubs)                               |
+| ⬜     | PUT / DELETE | `/api/users/:userId/follow` | Signed in | Follow or unfollow a student. 400 for yourself. 404 if their profile isn't public |
+| ⬜     | GET          | `/api/me/following`         | Signed in | `{ clubs, users }` I follow. Only I can see my own list                           |
+
+Rules:
+
+- **No follower counts and no follower lists, anywhere** (for students or clubs). This isn't a popularity contest. The API never returns them, so the UI can't show them.
+- Following someone doesn't reveal anything extra about them. You still only see their public profile and the attendee lists they've opted into.
 
 ## Uploads
 
-| Status | Method | Path           | Who       | Notes                                                                                                                               |
-| ------ | ------ | -------------- | --------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| ⬜     | POST   | `/api/uploads` | Signed in | `{ folder: "clubs" \| "events", contentType }` returns `{ key, uploadUrl }`. Only allow image content types. See `server/src/s3.ts` |
+| Status | Method | Path           | Who       | Notes                                                                                                                                               |
+| ------ | ------ | -------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ⬜     | POST   | `/api/uploads` | Signed in | `{ folder: "clubs" \| "events" \| "users", contentType }` returns `{ key, uploadUrl, publicUrl }`. Only image content types. See `server/src/s3.ts` |
+
+Now **required**, not a stretch goal: club logos, event images, and profile pictures all depend on it.
+
+Upload flow: (1) ask `POST /api/uploads` for an upload URL, (2) the browser `PUT`s the file directly to `uploadUrl`, (3) save the result: `key` for clubs and events (via their `PATCH` endpoints), or `publicUrl` for your profile picture (via `authClient.updateUser`).
+
+Security: when a `PATCH` saves a `logoKey` or `imageKey`, check it starts with the right folder (`clubs/` or `events/`). Otherwise someone could point their club's logo at any file in the bucket.
+
+## Privacy rules (summary)
+
+| Who can see...              | Answer                                                                              |
+| --------------------------- | ----------------------------------------------------------------------------------- |
+| A public profile            | Any signed-in student, who can also follow it                                       |
+| A non-public profile        | Only its owner. It can't be followed, and its owner never appears on attendee lists |
+| That you RSVP'd to an event | Nobody, unless you turned on "Show me on the attendee list" for that event          |
+| Who you follow              | Only you                                                                            |
+| Who follows you / how many  | Nobody, not even you                                                                |
 
 ## Errors
 

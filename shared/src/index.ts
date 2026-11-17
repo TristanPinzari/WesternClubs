@@ -32,9 +32,6 @@ export const ATTENDANCE_PURPOSES = [
 ] as const;
 export type AttendancePurpose = (typeof ATTENDANCE_PURPOSES)[number];
 
-export const CONNECTION_STATUSES = ["pending", "accepted"] as const;
-export type ConnectionStatus = (typeof CONNECTION_STATUSES)[number];
-
 // ---- Sign-up is restricted to Western students ----
 
 export const ALLOWED_EMAIL_DOMAIN = "uwo.ca";

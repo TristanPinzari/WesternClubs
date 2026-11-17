@@ -57,43 +57,43 @@ The goal is to help students discover events and find their people.
 ### Accounts & Verification
 
 - Sign-up is restricted to Western University students with a valid `@uwo.ca` email address.
-- Email verification is required before creating a profile, joining attendee lists, or managing a club.
+- For the hackathon, this is a domain check only. Verifying that you actually own the address (an emailed code or link) is a future improvement.
+- A quick onboarding step after sign-up: pick your interests and follow a few clubs, so your feed is personalized from the start.
 
 ### Personalized Event Management
 
-- Save events for later.
+- A **"For you" feed** that puts events first from clubs you follow, then events people you follow are going to, then events matching your interests.
 - Mark events as "Interested" or "Going."
 - View upcoming events in a personal dashboard.
 - Keep track of events you plan to attend.
+- Save events for later (lower priority).
 
 ### Student Profiles
 
-- Create a personal profile.
-- Add information such as program, year of study, interests, and a short bio.
+- Create a personal profile with a profile picture.
+- Add information such as program, year of study, interests (chosen from a fixed list), and a short bio.
 - Include optional links to external social profiles.
-- Control what profile information is visible to other users.
+- Make your profile public or private. Private profiles can't be viewed or followed by others.
 
-### Social Networking
+### Following
 
-- View students who have opted to appear on an event's attendee list.
-- Discover other students with shared interests.
-- View public student profiles.
-- Send and accept connection requests.
-- Build connections through campus events.
+- Follow clubs and other students. Following is one-way and needs no approval.
+- Events from clubs and people you follow appear higher in your feed.
+- **No follower counts or follower lists.** Orbit is for finding events and people, not for comparing popularity.
 
-### Event-Based Connections
+### Meeting People at Events
 
-- Find students attending the same events.
+- RSVPs are **anonymous by default**. You only appear on an event's attendee list if you choose to.
+- See which students opted to appear on an attendee list, and view their public profiles.
 - Indicate your purpose for attending, such as meeting new people, professional networking, or finding teammates.
-- Connect with other attendees before or after events.
 - Optionally indicate that you're looking for someone to attend an event with.
 
 ## How It Works
 
-1. **Discover:** Browse campus events or search for activities that interest you.
+1. **Discover:** Browse campus events, or check your "For you" feed.
 2. **Explore:** View event information, organizers, and registration links.
-3. **Plan:** Save events or mark yourself as interested or going.
-4. **Connect:** Explore other attendees who have chosen to make themselves visible.
+3. **Plan:** Mark yourself as interested or going, anonymously or on the attendee list.
+4. **Connect:** See who else is going, and follow clubs and people you want to keep up with.
 5. **Engage:** Meet new people and participate in campus opportunities.
 
 ## Technology Stack
@@ -271,11 +271,13 @@ Everyone works on their own branch, and changes reach `main` only through a pull
 
 - [ ] Implement club roles and permissions (Owner, Admin, Editor)
 - [ ] Implement club ownership transfer
-- [ ] Allow students to follow clubs
-- [ ] Implement student profile creation
-- [ ] Add "Interested" and "Going" event statuses
+- [ ] Club exec pages: create a club, club settings, post/edit/cancel events, manage execs
+- [ ] Allow students to follow clubs and other students
+- [ ] Implement student profiles, profile pictures, and image uploads
+- [ ] Onboarding: pick interests and follow clubs after sign-up
+- [ ] Add "Interested" and "Going" event statuses (anonymous by default)
 - [ ] Display opt-in event attendee lists
-- [ ] Implement connection requests
+- [ ] "For you" feed ranked by follows and interests
 - [ ] Create a personal event dashboard
 
 ### Phase 3 — Testing and Deployment
@@ -297,18 +299,22 @@ Potential features beyond the initial hackathon include:
 - Event recommendations based on a student's interests and goals.
 - Calendar integration and event reminders.
 - Additional networking and community-building features.
+- Email verification, to prove students own their `@uwo.ca` address.
+- Club verification and limits on club creation, to stop people impersonating clubs or reserving popular names.
+- Letting club owners choose a custom URL (slug) for their club page.
+- Moderation tools: reporting and blocking.
 - Support for additional universities.
 
 ## Team
 
 Developed by a team of Western University students participating in the **Xcelerate Hackathon**.
 
-| Name    | Role                                         |
-| ------- | -------------------------------------------- |
-| Tristan | Team lead, mentor, and code reviewer         |
-| Naksh   | Backend, authentication, and permissions     |
-| Aryan   | Frontend: event discovery, plus demo data    |
-| Rokyo   | Full stack: RSVPs and the personal dashboard |
+| Name    | Role                                                                          |
+| ------- | ----------------------------------------------------------------------------- |
+| Tristan | Team lead, mentor, code reviewer, and pitch                                   |
+| Naksh   | Backend: auth, permissions, uploads, following, and profiles API              |
+| Aryan   | Frontend: event discovery, club exec pages, the "For you" feed, and demo data |
+| Rokyo   | Full stack: sign-in, RSVPs and attendee lists, profiles, and onboarding       |
 
 Each member's task list is in [`docs/tasks/`](docs/tasks/).
 

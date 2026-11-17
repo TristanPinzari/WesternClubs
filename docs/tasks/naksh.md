@@ -51,3 +51,52 @@ You own the database schema, the API, and the security of Orbit: who is allowed 
 
 - Run `npm run db:studio` to look at your data in the browser.
 - Everyone builds on your schema, so post in the group chat whenever you change a table.
+
+---
+
+## New tasks (added Nov 16)
+
+The plan changed on Nov 16. Nothing you've already built is affected. What changed:
+
+- **Connections are cancelled.** Students now **follow** each other one-way, like following a club, with no requests or approvals. Skip the `connection` table and the connection endpoints. Their replacement, `user_follow`, is below.
+- **Uploads and profiles are no longer stretch goals.** Club logos, event images, and profile pictures all depend on them.
+- **No follower counts or follower lists anywhere.** The API must never return them.
+
+Do these in order. Each one unblocks a teammate, noted in brackets.
+
+### A. Finish PR #17
+
+- [ ] Slug suffix (`western-ai-2`) instead of the 409, as requested in the review
+
+### B. Creating and editing events [unblocks Aryan's event forms]
+
+- [ ] `createEventSchema` in `shared/src/index.ts` (use the `event` table columns)
+- [ ] `POST /api/clubs/:clubId/events`: owners, admins, editors (`requireClubRole`)
+- [ ] `PATCH /api/events/:id` and `POST /api/events/:id/cancel`. **Security:** look up the event's own `clubId` in the database and check the role in _that_ club. Never trust a `clubId` from the request body.
+
+### C. Image uploads [unblocks Aryan's image upload component and Rokyo's profile pictures]
+
+- [ ] `presignUpload()` in `server/src/s3.ts` (the TODO there)
+- [ ] `POST /api/uploads`: `folder` is `clubs`, `events`, or `users`, and image content types only. Returns `{ key, uploadUrl, publicUrl }`.
+- [ ] TODO(advanced): a size limit. A presigned PUT can't limit file size; look up S3 _presigned POST_ with `content-length-range`, or accept the risk for the hackathon and note it.
+
+### D. Editing and deleting clubs [unblocks Aryan's club settings page]
+
+- [ ] `PATCH /api/clubs/:clubId`: owner and admin. Name, description, `logoKey`, links. **Don't change the slug.** Check that `logoKey` starts with `clubs/`.
+- [ ] `DELETE /api/clubs/:clubId`: owner only
+- [ ] `GET /api/me/clubs`: clubs I'm an exec of, with my role. Aryan needs it to decide when to show the "Post event" and "Settings" buttons.
+- [ ] Then section 3's member management and ownership transfer, still as planned
+
+### E. Following [unblocks Aryan's follow button and feed, and Rokyo's profiles]
+
+- [ ] `club_follow` table, plus `PUT` / `DELETE /api/clubs/:clubId/follow`
+- [ ] `user_follow` table (design in `schema.ts`), plus `PUT` / `DELETE /api/users/:userId/follow`. Return 400 if someone tries to follow themselves, and 404 if the profile isn't public.
+- [ ] `GET /api/me/following`: `{ clubs, users }`
+
+### F. Profiles [unblocks Rokyo's profile pages]
+
+- [ ] `profile` table (design in `schema.ts`). Interests must be values from `EVENT_CATEGORIES`; validate with Zod.
+- [ ] `GET /api/profiles/:userId` (includes `isFollowing`) and `PUT /api/me/profile`
+- [ ] Profile pictures live in `user.image` as a full URL (see `docs/API.md`). Nothing to build for that beyond uploads.
+
+**Think like an attacker, again:** can someone follow a private profile by calling the API directly? Can an editor change a club's logo through `PATCH`? Can someone set their club's `logoKey` to another club's image?
