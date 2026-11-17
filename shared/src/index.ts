@@ -291,4 +291,38 @@ export interface MyFollowing {
   users: UserSummary[];
 }
 
+// ---- Profiles ----
+
+// GET /api/profiles/:userId. Your name and picture come from your account (Better Auth's
+// user table); the rest from your profile. Fields you haven't filled in are null/empty.
+export interface Profile {
+  userId: string;
+  name: string;
+  image: string | null; // profile picture URL
+  program: string | null;
+  yearOfStudy: number | null;
+  bio: string | null;
+  interests: EventCategory[];
+  links: Links;
+  isPublic: boolean; // only ever false when viewing your own profile
+  isFollowing: boolean; // do I follow this person? (always false on your own profile)
+}
+
+// PUT /api/me/profile. Send only the fields you're changing; the rest stay as they
+// were (so onboarding can send just { interests }). "" or null clears a text field.
+// Making your profile private (isPublic: false) also removes all your followers.
+export const updateProfileSchema = z
+  .object({
+    program: emptyAsNull(z.string().trim().max(100)),
+    yearOfStudy: z.number().int().min(1).max(10).nullable(),
+    bio: emptyAsNull(z.string().trim().max(1000)),
+    interests: z
+      .array(z.enum(EVENT_CATEGORIES)) // only real categories, so the feed can match them
+      .transform((list) => [...new Set(list)]), // drop duplicates
+    links: linksSchema,
+    isPublic: z.boolean(),
+  })
+  .partial();
+export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+
 // TODO: add schemas and types as you build each endpoint in docs/API.md

@@ -1,7 +1,11 @@
 // WHAT: Endpoints about the signed-in user (everything under /api/me).
 // WITHOUT IT: The frontend couldn't ask "which clubs am I an exec of?", so it wouldn't
 //   know when to show the "Post event" and "Settings" buttons.
-import type { MyClub, MyFollowing } from "@orbit/shared";
+import {
+  updateProfileSchema,
+  type MyClub,
+  type MyFollowing,
+} from "@orbit/shared";
 import { and, asc, eq, isNull, or } from "drizzle-orm";
 import { Router } from "express";
 import { db } from "../db";
@@ -15,6 +19,7 @@ import {
 } from "../db/schema";
 import { requireAuth } from "../middleware";
 import { toClubSummary } from "./clubs";
+import { getProfile } from "./profiles";
 
 export const meRouter = Router();
 
@@ -66,4 +71,30 @@ meRouter.get("/following", async (req, res) => {
     users,
   };
   res.json(body);
+});
+
+// PUT /api/me/profile  { program?, yearOfStudy?, bio?, interests?, links?, isPublic? }
+//   -> my Profile
+// Creates my profile the first time, then updates only the fields I send.
+meRouter.put("/profile", async (req, res) => {
+  const me = req.user!.id;
+  const changes = updateProfileSchema.parse(req.body);
+
+  // Both steps or neither: if making the profile private, also remove my followers.
+  await db.transaction(async (tx) => {
+    // "Upsert": insert my profile row, or if it already exists, update it instead.
+    await tx
+      .insert(profile)
+      .values({ userId: me, ...changes })
+      .onConflictDoUpdate({
+        target: profile.userId,
+        set: { ...changes, updatedAt: new Date() },
+      });
+    // A private profile can't be followed (docs/API.md), so existing follows go too.
+    if (changes.isPublic === false) {
+      await tx.delete(userFollow).where(eq(userFollow.followeeId, me));
+    }
+  });
+
+  res.json(await getProfile(me, me));
 });

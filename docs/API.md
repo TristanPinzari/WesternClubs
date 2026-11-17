@@ -108,10 +108,10 @@ The frontend shows the reason on the card ("From a club you follow", "People you
 
 ## Profiles
 
-| Status | Method | Path                    | Who       | Notes                                                                                                                           |
-| ------ | ------ | ----------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------- |
-| ⬜     | GET    | `/api/profiles/:userId` | Signed in | Name, picture, program, year, bio, interests, links, plus `isFollowing`. 404 if the profile isn't public (unless it's your own) |
-| ⬜     | PUT    | `/api/me/profile`       | Signed in | Program, year, bio, interests (values from `EVENT_CATEGORIES` only), links, isPublic                                            |
+| Status | Method | Path                    | Who       | Notes                                                                                                                                                           |
+| ------ | ------ | ----------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ✅     | GET    | `/api/profiles/:userId` | Signed in | `Profile`: name, picture, program, year, bio, interests, links, plus `isFollowing`. 404 if the profile isn't public (unless it's your own)                      |
+| ✅     | PUT    | `/api/me/profile`       | Signed in | `updateProfileSchema`. Send only changed fields; creates the profile on first save. Going private (`isPublic: false`) removes your followers. Returns `Profile` |
 
 **Profile pictures** are stored in Better Auth's `user.image` column as the **full public URL**. Update it with `authClient.updateUser({ image })` after uploading (see Uploads). Club logos use `club.logoKey`, and event images use `event.imageKey`, which store the S3 key; the API turns those into URLs.
 

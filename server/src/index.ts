@@ -9,6 +9,7 @@ import { errorHandler, loadSession } from "./middleware";
 import { clubsRouter } from "./routes/clubs";
 import { eventsRouter } from "./routes/events";
 import { meRouter } from "./routes/me";
+import { profilesRouter } from "./routes/profiles";
 import { uploadsRouter } from "./routes/uploads";
 import { usersRouter } from "./routes/users";
 
@@ -29,7 +30,8 @@ app.use("/api/events", eventsRouter);
 app.use("/api/uploads", uploadsRouter);
 app.use("/api/me", meRouter);
 app.use("/api/users", usersRouter);
-// TODO: profiles, rsvps, feed... (see docs/API.md)
+app.use("/api/profiles", profilesRouter);
+// TODO: rsvps, feed... (see docs/API.md)
 
 app.use(errorHandler);
 
