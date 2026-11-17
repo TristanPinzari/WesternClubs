@@ -64,9 +64,9 @@ Rules worth enforcing:
 | ------ | ------ | ------------------------------------------------------- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
 | ✅     | GET    | `/api/events?q=&category=&clubId=&from=&limit=&offset=` | Public                           | Upcoming, not-cancelled events, soonest first. `q` searches title, description, and club name                                         |
 | ✅     | GET    | `/api/events/:id`                                       | Public                           | Includes club info. Also returns past/cancelled events (check `cancelledAt`). Going/interested counts: TODO, once `event_rsvp` exists |
-| ⬜     | POST   | `/api/clubs/:clubId/events`                             | Owner, Admin, Editor             |                                                                                                                                       |
-| ⬜     | PATCH  | `/api/events/:id`                                       | That club's Owner, Admin, Editor |                                                                                                                                       |
-| ⬜     | POST   | `/api/events/:id/cancel`                                | That club's Owner, Admin, Editor | Sets `cancelledAt`                                                                                                                    |
+| ✅     | POST   | `/api/clubs/:clubId/events`                             | Owner, Admin, Editor             | `createEventSchema`. Title, category, startsAt required. Must start in the future. Returns 201 with `EventDetail`                     |
+| ✅     | PATCH  | `/api/events/:id`                                       | That club's Owner, Admin, Editor | `updateEventSchema`: send only changed fields (`null` clears). Can't move clubs. 409 if cancelled. Returns `EventDetail`              |
+| ✅     | POST   | `/api/events/:id/cancel`                                | That club's Owner, Admin, Editor | Sets `cancelledAt`. Permanent; cancelling twice keeps the first time. Returns `EventDetail`                                           |
 
 ## RSVPs, saves, and the dashboard
 

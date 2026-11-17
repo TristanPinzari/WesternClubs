@@ -4,15 +4,18 @@
 import {
   clubListQuerySchema,
   createClubSchema,
+  createEventSchema,
   type ClubSummary,
   type Paginated,
 } from "@orbit/shared";
 import { count, eq, ilike, like, or } from "drizzle-orm";
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "../db";
-import { club, clubMember } from "../db/schema";
-import { requireAuth } from "../middleware";
+import { club, clubMember, event } from "../db/schema";
+import { requireAuth, requireClubRole } from "../middleware";
 import { mediaUrl } from "../s3";
+import { endsAfterStart, getEventDetail } from "./events";
 
 export const clubsRouter = Router();
 
@@ -143,3 +146,33 @@ clubsRouter.post("/", requireAuth, async (req, res) => {
     }
   }
 });
+
+// POST /api/clubs/:clubId/events  { title, category, startsAt, ... }  -> 201 with the event
+// Any exec of the club (owner, admin, editor). requireClubRole has already checked
+// the user's role in the club from the URL, and that the club exists.
+clubsRouter.post(
+  "/:clubId/events",
+  requireAuth,
+  requireClubRole("owner", "admin", "editor"),
+  async (req, res) => {
+    const input = createEventSchema.parse(req.body);
+    if (input.startsAt <= new Date()) {
+      res.status(400).json({ error: "The event must start in the future" });
+      return;
+    }
+    if (!endsAfterStart(input.startsAt, input.endsAt)) {
+      res.status(400).json({ error: "The event must end after it starts" });
+      return;
+    }
+
+    // requireClubRole already checked this is a valid uuid. Parsing it again gives
+    // TypeScript a plain string (Express types URL params loosely).
+    const clubId = z.uuid().parse(req.params.clubId);
+
+    const [row] = await db
+      .insert(event)
+      .values({ ...input, clubId, createdById: req.user!.id })
+      .returning({ id: event.id });
+    res.status(201).json(await getEventDetail(row.id));
+  },
+);

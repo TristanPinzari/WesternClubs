@@ -134,5 +134,53 @@ export const createClubSchema = z.object({
 });
 export type CreateClubInput = z.infer<typeof createClubSchema>;
 
-// TODO: add schemas and types as you build each endpoint in docs/API.md, e.g.
-//   - createEventSchema      (title, category, startsAt, ... see the event table notes)
+// ---- Creating and editing events ----
+
+// For optional fields that can be cleared: a form sends "" for an empty box, which
+// should mean "no value" (null), not "invalid".
+const emptyAsNull = <T extends z.ZodType>(schema: T) =>
+  z.preprocess(
+    (value) =>
+      typeof value === "string" && value.trim() === "" ? null : value,
+    schema.nullable(),
+  );
+
+// Every editable field of an event, with its rules.
+const eventFields = z.object({
+  title: z.string().trim().min(1, "Title is required").max(120),
+  description: z.string().trim().max(5000),
+  category: z.enum(EVENT_CATEGORIES),
+  startsAt: z.coerce.date(),
+  endsAt: emptyAsNull(z.coerce.date()),
+  location: z.string().trim().max(200),
+  priceCents: z.number().int().min(0).max(1_000_000), // up to $10,000
+  eligibility: z.string().trim().max(500),
+  // http(s) only. Otherwise someone could save "javascript:..." as the link, and
+  // clicking "Register" on the event page would run their code.
+  registrationUrl: emptyAsNull(z.url({ protocol: /^https?$/ }).max(2000)),
+  // From POST /api/uploads. Must be in the events/ folder, so nobody can point their
+  // event's image at another club's logo or someone's profile picture.
+  imageKey: emptyAsNull(
+    z.string().startsWith("events/", "Invalid image").max(200),
+  ),
+});
+
+// POST /api/clubs/:clubId/events. Title, category, and startsAt are required; anything
+// left out gets the database default ("" for text, 0 for price, null for the rest).
+export const createEventSchema = eventFields.partial({
+  description: true,
+  endsAt: true,
+  location: true,
+  priceCents: true,
+  eligibility: true,
+  registrationUrl: true,
+  imageKey: true,
+});
+export type CreateEventInput = z.infer<typeof createEventSchema>;
+
+// PATCH /api/events/:id. Send only the fields you want to change. There's no clubId
+// field, so an event can never be moved to another club (unknown keys are dropped).
+export const updateEventSchema = eventFields.partial();
+export type UpdateEventInput = z.infer<typeof updateEventSchema>;
+
+// TODO: add schemas and types as you build each endpoint in docs/API.md
