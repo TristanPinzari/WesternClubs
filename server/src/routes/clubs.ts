@@ -7,7 +7,7 @@ import {
   type ClubSummary,
   type Paginated,
 } from "@orbit/shared";
-import { count, eq, ilike } from "drizzle-orm";
+import { count, eq, ilike, like, or } from "drizzle-orm";
 import { Router } from "express";
 import { db } from "../db";
 import { club, clubMember } from "../db/schema";
@@ -70,54 +70,76 @@ clubsRouter.get("/:slug", async (req, res) => {
 export function slugify(name: string): string {
   return name
     .normalize("NFKD") // split "é" into "e" + an accent mark...
-    .replace(/[̀-ͯ]/g, "") // ...then drop the accent marks
+    .replace(/\p{M}/gu, "") // ...then drop the accent marks (\p{M} = any "mark" character)
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-") // any run of other characters becomes one "-"
     .replace(/^-+|-+$/g, ""); // no "-" at the start or end
 }
 
-// Postgres error code 23505 = "unique violation" (a value that must be unique already
-// exists). Drizzle wraps database errors, so the Postgres error is in `cause`.
-function isUniqueViolation(err: unknown): boolean {
-  const cause =
-    err instanceof Error ? (err.cause as { code?: string }) : undefined;
-  return cause?.code === "23505";
+// The first free slug: "western-ai" if nobody has it, otherwise "western-ai-2",
+// "western-ai-3", ... One query, however many clubs share the name.
+async function findFreeSlug(base: string): Promise<string> {
+  const rows = await db
+    .select({ slug: club.slug })
+    .from(club)
+    .where(or(eq(club.slug, base), like(club.slug, `${base}-%`)));
+  const taken = new Set(rows.map((r) => r.slug));
+  if (!taken.has(base)) return base;
+  let n = 2;
+  while (taken.has(`${base}-${n}`)) n++;
+  return `${base}-${n}`;
 }
 
+// True if Postgres rejected the insert because the slug is already used (error code
+// 23505 = unique violation, on the club.slug constraint). Drizzle wraps database
+// errors, so the Postgres error is in `cause`.
+function isSlugTaken(err: unknown): boolean {
+  const cause =
+    err instanceof Error
+      ? (err.cause as { code?: string; constraint?: string } | undefined)
+      : undefined;
+  return cause?.code === "23505" && cause.constraint === "club_slug_unique";
+}
+
+const MAX_SLUG_ATTEMPTS = 5;
+
 // POST /api/clubs  { name, description? }  -> 201 with the new club
-// Any signed-in student can create a club, and they become its owner.
+// Any signed-in student can create a club, and they become its owner. Two clubs can
+// share a name; the second one gets a numbered slug ("western-ai-2").
 clubsRouter.post("/", requireAuth, async (req, res) => {
   const input = createClubSchema.parse(req.body);
-  const slug = slugify(input.name);
-  if (!slug) {
+  const base = slugify(input.name);
+  if (!base) {
     res
       .status(400)
       .json({ error: "Club name must contain at least one letter or number" });
     return;
   }
 
-  try {
-    // All or nothing: if either insert fails, Postgres undoes both, so a club can
-    // never exist without an owner.
-    const created = await db.transaction(async (tx) => {
-      const [row] = await tx
-        .insert(club)
-        .values({ name: input.name, slug, description: input.description })
-        .returning();
-      await tx
-        .insert(clubMember)
-        .values({ clubId: row.id, userId: req.user!.id, role: "owner" });
-      return row;
-    });
-    res.status(201).json(toClubSummary(created));
-  } catch (err) {
-    // The slug column is unique. We don't check "does it exist?" first, because two
-    // requests at the same moment could both pass that check. The database is the
-    // only place that can enforce uniqueness reliably.
-    if (isUniqueViolation(err)) {
-      res.status(409).json({ error: "A club with this name already exists" });
+  for (let attempt = 1; ; attempt++) {
+    const slug = await findFreeSlug(base);
+    try {
+      // All or nothing: if either insert fails, Postgres undoes both, so a club can
+      // never exist without an owner.
+      const created = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .insert(club)
+          .values({ name: input.name, slug, description: input.description })
+          .returning();
+        await tx
+          .insert(clubMember)
+          .values({ clubId: row.id, userId: req.user!.id, role: "owner" });
+        return row;
+      });
+      res.status(201).json(toClubSummary(created));
       return;
+    } catch (err) {
+      // Another request grabbed this slug between findFreeSlug and our insert (two
+      // people creating "Western AI" at the same moment). The database's unique
+      // constraint caught it. Postgres has aborted this transaction, so we can't
+      // retry inside it: loop round, pick a new slug, and start a fresh transaction.
+      if (isSlugTaken(err) && attempt < MAX_SLUG_ATTEMPTS) continue;
+      throw err; // a real bug, or still colliding after 5 tries: errorHandler -> 500
     }
-    throw err; // anything else is a real bug: errorHandler turns it into a 500
   }
 });
