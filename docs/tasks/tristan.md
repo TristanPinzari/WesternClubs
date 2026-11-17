@@ -40,7 +40,7 @@
 ### Plan changes to announce to the team
 
 - Following (clubs **and** people, one-way) replaces connections. No follower counts or follower lists.
-- Anonymous RSVPs by default. The attendee list is now required.
+- RSVPs appear on the attendee list by default, with an option to RSVP anonymously. The attendee list is now required.
 - Profile pictures for clubs and users, so uploads are now required.
 - A "For you" feed and an onboarding step.
 - New owners: Aryan has the club exec pages and the feed, Rokyo has profiles and onboarding, and Naksh has the backend for all of it.

@@ -54,7 +54,7 @@ You'll build one complete feature through every layer: the database table, the A
 
 ## 6. Stretch goals
 
-- [ ] `GET /api/events/:id/attendees` and an attendee list on the event page. Only show people who opted in!
+- [ ] `GET /api/events/:id/attendees` and an attendee list on the event page. Never show people who RSVP'd anonymously!
 
 ## Tips
 
@@ -67,7 +67,7 @@ You'll build one complete feature through every layer: the database table, the A
 
 Your sections 0–5 still stand, with these changes:
 
-- **RSVPs are anonymous by default.** In section 4, show the attendee-list option as a toggle labelled **"Show me on the attendee list"**, **off** by default. That's already how the table is designed (`showOnAttendeeList` defaults to false).
+- **RSVPs are visible by default, with an option to RSVP anonymously.** In section 4, put a toggle labelled **"Show me on the attendee list"** right inside the RSVP step, switched **on** by default, so students see it every time and can turn it off. When you build the `event_rsvp` table, make `showOnAttendeeList` default to **true** (the design note in `schema.ts` says so).
 - **The attendee list (section 6) is now required, not a stretch goal.** Build it **before** the dashboard (section 5). "See who else is going" is a big part of our pitch.
 - **Save is now low priority.** "Interested" already covers it. Build Save last, or skip it if time runs out.
 

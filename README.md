@@ -83,8 +83,8 @@ The goal is to help students discover events and find their people.
 
 ### Meeting People at Events
 
-- RSVPs are **anonymous by default**. You only appear on an event's attendee list if you choose to.
-- See which students opted to appear on an attendee list, and view their public profiles.
+- When you RSVP, you appear on the event's attendee list by default, so others can see who's going. You can **RSVP anonymously** instead by switching that off.
+- See who else is going, and view their public profiles.
 - Indicate your purpose for attending, such as meeting new people, professional networking, or finding teammates.
 - Optionally indicate that you're looking for someone to attend an event with.
 
@@ -92,7 +92,7 @@ The goal is to help students discover events and find their people.
 
 1. **Discover:** Browse campus events, or check your "For you" feed.
 2. **Explore:** View event information, organizers, and registration links.
-3. **Plan:** Mark yourself as interested or going, anonymously or on the attendee list.
+3. **Plan:** Mark yourself as interested or going, on the attendee list or anonymously.
 4. **Connect:** See who else is going, and follow clubs and people you want to keep up with.
 5. **Engage:** Meet new people and participate in campus opportunities.
 
@@ -275,8 +275,8 @@ Everyone works on their own branch, and changes reach `main` only through a pull
 - [ ] Allow students to follow clubs and other students
 - [ ] Implement student profiles, profile pictures, and image uploads
 - [ ] Onboarding: pick interests and follow clubs after sign-up
-- [ ] Add "Interested" and "Going" event statuses (anonymous by default)
-- [ ] Display opt-in event attendee lists
+- [ ] Add "Interested" and "Going" event statuses (with an option to RSVP anonymously)
+- [ ] Display event attendee lists
 - [ ] "For you" feed ranked by follows and interests
 - [ ] Create a personal event dashboard
 

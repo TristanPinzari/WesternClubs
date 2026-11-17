@@ -85,7 +85,7 @@ For `PATCH /api/events/:id` and `POST /api/events/:id/cancel`, look up the event
 Ranking: every event gets the **highest** matching group, then the feed is sorted by group, then soonest first (`ORDER BY score DESC, starts_at, id`, so pagination stays stable):
 
 1. **From a club you follow.** `reason: "followed_club"`
-2. **A person you follow is going or interested.** `reason: "followed_user"`. **Only count RSVPs with `showOnAttendeeList = true`.** Otherwise the feed would reveal anonymous RSVPs.
+2. **A person you follow is going or interested.** `reason: "followed_user"`. **Only count RSVPs with `showOnAttendeeList = true`.** Otherwise the feed would reveal RSVPs made anonymously.
 3. **Its category is one of your profile interests.** `reason: "interest"`
 4. Everything else. `reason: null`
 
@@ -102,7 +102,7 @@ The frontend shows the reason on the card ("From a club you follow", "People you
 | ⬜     | GET          | `/api/me/events`            | Signed in | Dashboard: my RSVPs and saved events, upcoming first                             |
 | ⬜     | GET          | `/api/me/clubs`             | Signed in | Clubs I'm an exec of, with my role                                               |
 
-**RSVPs are anonymous by default.** `showOnAttendeeList` defaults to `false`, so a student only appears on an attendee list if they turn it on. In the UI, show this as a toggle labelled "Show me on the attendee list", off by default.
+**RSVPs are visible by default, with an option to RSVP anonymously.** `showOnAttendeeList` defaults to `true`. In the UI, show a toggle labelled "Show me on the attendee list" **inside the RSVP step itself, switched on**, so students see it every time and can turn it off before confirming. Students with a non-public profile never appear, whatever the toggle says.
 
 **Save is low priority.** "Interested" already covers "keep this on my radar", so build Save last, or drop it if time runs out.
 
@@ -128,7 +128,7 @@ Following is **one-way and needs no approval**: follow a club or a person, and t
 Rules:
 
 - **No follower counts and no follower lists, anywhere** (for students or clubs). This isn't a popularity contest. The API never returns them, so the UI can't show them.
-- Following someone doesn't reveal anything extra about them. You still only see their public profile and the attendee lists they've opted into.
+- Following someone doesn't reveal anything extra about them. You still only see their public profile and the attendee lists they appear on.
 
 ## Uploads
 
@@ -144,13 +144,13 @@ Security: when a `PATCH` saves a `logoKey` or `imageKey`, check it starts with t
 
 ## Privacy rules (summary)
 
-| Who can see...              | Answer                                                                              |
-| --------------------------- | ----------------------------------------------------------------------------------- |
-| A public profile            | Any signed-in student, who can also follow it                                       |
-| A non-public profile        | Only its owner. It can't be followed, and its owner never appears on attendee lists |
-| That you RSVP'd to an event | Nobody, unless you turned on "Show me on the attendee list" for that event          |
-| Who you follow              | Only you                                                                            |
-| Who follows you / how many  | Nobody, not even you                                                                |
+| Who can see...              | Answer                                                                                  |
+| --------------------------- | --------------------------------------------------------------------------------------- |
+| A public profile            | Any signed-in student, who can also follow it                                           |
+| A non-public profile        | Only its owner. It can't be followed, and its owner never appears on attendee lists     |
+| That you RSVP'd to an event | Any signed-in student, on the attendee list, unless you RSVP'd anonymously (toggle off) |
+| Who you follow              | Only you                                                                                |
+| Who follows you / how many  | Nobody, not even you                                                                    |
 
 ## Errors
 

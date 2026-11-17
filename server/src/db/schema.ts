@@ -124,7 +124,8 @@ export const event = pgTable(
 //   - eventId: FK -> event (cascade); userId: FK -> user (cascade)
 //   - composite PK (eventId, userId)          (one RSVP per user per event)
 //   - status: enum from RSVP_STATUSES
-//   - showOnAttendeeList: boolean, default FALSE (opt-in, not opt-out)
+//   - showOnAttendeeList: boolean, default TRUE (visible unless the student turns it
+//       off, i.e. RSVPs anonymously)
 //   - purpose: enum from ATTENDANCE_PURPOSES, optional
 //   - lookingForBuddy: boolean, default false
 //   - createdAt, updatedAt
