@@ -5,6 +5,7 @@
 import {
   index,
   integer,
+  jsonb,
   pgEnum,
   pgTable,
   primaryKey,
@@ -12,7 +13,7 @@ import {
   timestamp,
   uuid,
 } from "drizzle-orm/pg-core";
-import { CLUB_ROLES, EVENT_CATEGORIES } from "@orbit/shared";
+import { CLUB_ROLES, EVENT_CATEGORIES, type Links } from "@orbit/shared";
 import { user } from "./auth-schema";
 
 // Drizzle docs: https://orm.drizzle.team/docs/sql-schema-declaration
@@ -35,6 +36,7 @@ export const club = pgTable("club", {
   slug: text("slug").notNull().unique(), // URL-friendly name, e.g. "western-ai"
   description: text("description").notNull().default(""),
   logoKey: text("logo_key"), // S3 object key, not a full URL; nullable = optional
+  links: jsonb("links").$type<Links>().notNull().default({}), // { instagram: "https://..." }
   createdAt: ts("created_at").notNull().defaultNow(),
   updatedAt: ts("updated_at").notNull().defaultNow(),
 });

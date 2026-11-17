@@ -5,12 +5,13 @@ import {
   clubListQuerySchema,
   createClubSchema,
   createEventSchema,
+  updateClubSchema,
+  type ClubDetail,
   type ClubSummary,
   type Paginated,
 } from "@orbit/shared";
 import { count, eq, ilike, like, or } from "drizzle-orm";
 import { Router } from "express";
-import { z } from "zod";
 import { db } from "../db";
 import { club, clubMember, event } from "../db/schema";
 import { requireAuth, requireClubRole } from "../middleware";
@@ -19,7 +20,7 @@ import { endsAfterStart, getEventDetail } from "./events";
 
 export const clubsRouter = Router();
 
-function toClubSummary(row: typeof club.$inferSelect): ClubSummary {
+export function toClubSummary(row: typeof club.$inferSelect): ClubSummary {
   return {
     id: row.id,
     name: row.name,
@@ -27,6 +28,10 @@ function toClubSummary(row: typeof club.$inferSelect): ClubSummary {
     description: row.description,
     logoUrl: mediaUrl(row.logoKey),
   };
+}
+
+function toClubDetail(row: typeof club.$inferSelect): ClubDetail {
+  return { ...toClubSummary(row), links: row.links };
 }
 
 // GET /api/clubs?q=ai&limit=20&offset=0
@@ -65,7 +70,7 @@ clubsRouter.get("/:slug", async (req, res) => {
     res.status(404).json({ error: "Club not found" });
     return;
   }
-  res.json(toClubSummary(row));
+  res.json(toClubDetail(row));
 });
 
 // "Western AI Club!" -> "western-ai-club". Accents are stripped ("Café" -> "cafe").
@@ -134,7 +139,7 @@ clubsRouter.post("/", requireAuth, async (req, res) => {
           .values({ clubId: row.id, userId: req.user!.id, role: "owner" });
         return row;
       });
-      res.status(201).json(toClubSummary(created));
+      res.status(201).json(toClubDetail(created));
       return;
     } catch (err) {
       // Another request grabbed this slug between findFreeSlug and our insert (two
@@ -165,14 +170,41 @@ clubsRouter.post(
       return;
     }
 
-    // requireClubRole already checked this is a valid uuid. Parsing it again gives
-    // TypeScript a plain string (Express types URL params loosely).
-    const clubId = z.uuid().parse(req.params.clubId);
-
     const [row] = await db
       .insert(event)
-      .values({ ...input, clubId, createdById: req.user!.id })
+      .values({ ...input, clubId: req.clubId!, createdById: req.user!.id })
       .returning({ id: event.id });
     res.status(201).json(await getEventDetail(row.id));
+  },
+);
+
+// PATCH /api/clubs/:clubId  { name?, description?, logoKey?, links? }  -> the club
+// Owner and admin only (editors can post events, but not change the club itself).
+// The slug never changes, so links people have shared keep working after a rename.
+clubsRouter.patch(
+  "/:clubId",
+  requireAuth,
+  requireClubRole("owner", "admin"),
+  async (req, res) => {
+    const changes = updateClubSchema.parse(req.body);
+    const [row] = await db
+      .update(club)
+      .set({ ...changes, updatedAt: new Date() })
+      .where(eq(club.id, req.clubId!))
+      .returning();
+    res.json(toClubDetail(row));
+  },
+);
+
+// DELETE /api/clubs/:clubId  -> 204
+// Owner only. Permanent: the database also deletes the club's memberships and events
+// (onDelete: "cascade" in schema.ts).
+clubsRouter.delete(
+  "/:clubId",
+  requireAuth,
+  requireClubRole("owner"),
+  async (req, res) => {
+    await db.delete(club).where(eq(club.id, req.clubId!));
+    res.status(204).end();
   },
 );

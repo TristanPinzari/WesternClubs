@@ -224,4 +224,54 @@ export type CreateEventInput = z.infer<typeof createEventSchema>;
 export const updateEventSchema = eventFields.partial();
 export type UpdateEventInput = z.infer<typeof updateEventSchema>;
 
+// ---- Links (on clubs, and on profiles) ----
+
+export const LINK_KINDS = [
+  "website",
+  "instagram",
+  "linkedin",
+  "discord",
+  "github",
+] as const;
+export type LinkKind = (typeof LINK_KINDS)[number];
+export type Links = Partial<Record<LinkKind, string>>; // e.g. { instagram: "https://..." }
+
+// http(s) only, so a link can never be "javascript:..." (see registrationUrl above).
+const httpUrl = z.url({ protocol: /^https?$/ }).max(500);
+const optionalLink = emptyAsUndefined(httpUrl.optional()); // "" = no link
+
+// Unknown kinds are dropped. Sending links REPLACES all of them, so to remove one,
+// send the object without it.
+export const linksSchema = z.object({
+  website: optionalLink,
+  instagram: optionalLink,
+  linkedin: optionalLink,
+  discord: optionalLink,
+  github: optionalLink,
+});
+
+// ---- Club settings (PATCH /api/clubs/:clubId) and GET /api/me/clubs ----
+
+// GET /api/clubs/:slug and PATCH /api/clubs/:clubId return this.
+export interface ClubDetail extends ClubSummary {
+  links: Links;
+}
+
+// Send only what changed. There's no slug field: renaming keeps the old URL working.
+export const updateClubSchema = z
+  .object({
+    name: z.string().trim().min(2).max(80),
+    description: z.string().trim().max(2000),
+    logoKey: emptyAsNull(uploadKeySchema("clubs")), // null removes the logo
+    links: linksSchema,
+  })
+  .partial();
+export type UpdateClubInput = z.infer<typeof updateClubSchema>;
+
+// A club I'm an exec of. Use `role` to decide which buttons to show (the server
+// still checks permissions on every request).
+export interface MyClub extends ClubSummary {
+  role: ClubRole;
+}
+
 // TODO: add schemas and types as you build each endpoint in docs/API.md

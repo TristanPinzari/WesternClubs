@@ -27,19 +27,19 @@ On the frontend, use `authClient` in `client/src/lib/auth-client.ts` rather than
 
 ## Clubs
 
-| Status | Method       | Path                                    | Who                       | Notes                                                                              |
-| ------ | ------------ | --------------------------------------- | ------------------------- | ---------------------------------------------------------------------------------- |
-| ✅     | GET          | `/api/clubs?q=&limit=&offset=`          | Public                    | Search and list clubs                                                              |
-| ✅     | GET          | `/api/clubs/:slug`                      | Public                    | Club details                                                                       |
-| ✅     | POST         | `/api/clubs`                            | Signed in                 | `{ name, description? }`. Creator becomes **owner**. Taken slug gets `-2`, `-3`    |
-| ⬜     | PATCH        | `/api/clubs/:clubId`                    | Owner, Admin              | Name, description, logo, links                                                     |
-| ⬜     | DELETE       | `/api/clubs/:clubId`                    | Owner                     |                                                                                    |
-| ⬜     | GET          | `/api/clubs/:clubId/members`            | Public                    | Execs and their roles                                                              |
-| ⬜     | POST         | `/api/clubs/:clubId/members`            | Owner, Admin              | `{ email, role }`. Add an exec by their Orbit email                                |
-| ⬜     | PATCH        | `/api/clubs/:clubId/members/:userId`    | Owner, Admin              | `{ role }`. See rules below                                                        |
-| ⬜     | DELETE       | `/api/clubs/:clubId/members/:userId`    | Owner, Admin, or yourself | Remove an exec, or leave the club                                                  |
-| ⬜     | POST         | `/api/clubs/:clubId/transfer-ownership` | Owner                     | `{ userId }`. Must already be a member. Old owner becomes admin. Use a transaction |
-| ⬜     | PUT / DELETE | `/api/clubs/:clubId/follow`             | Signed in                 | Follow or unfollow                                                                 |
+| Status | Method       | Path                                    | Who                       | Notes                                                                                                                               |
+| ------ | ------------ | --------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| ✅     | GET          | `/api/clubs?q=&limit=&offset=`          | Public                    | Search and list clubs                                                                                                               |
+| ✅     | GET          | `/api/clubs/:slug`                      | Public                    | Club details (`ClubDetail`, includes `links`)                                                                                       |
+| ✅     | POST         | `/api/clubs`                            | Signed in                 | `{ name, description? }`. Creator becomes **owner**. Taken slug gets `-2`, `-3`                                                     |
+| ✅     | PATCH        | `/api/clubs/:clubId`                    | Owner, Admin              | `updateClubSchema`: name, description, `logoKey` (from an upload to `clubs`), `links`. Never changes the slug. Returns `ClubDetail` |
+| ✅     | DELETE       | `/api/clubs/:clubId`                    | Owner                     | 204. Permanent: also deletes its members and events                                                                                 |
+| ⬜     | GET          | `/api/clubs/:clubId/members`            | Public                    | Execs and their roles                                                                                                               |
+| ⬜     | POST         | `/api/clubs/:clubId/members`            | Owner, Admin              | `{ email, role }`. Add an exec by their Orbit email                                                                                 |
+| ⬜     | PATCH        | `/api/clubs/:clubId/members/:userId`    | Owner, Admin              | `{ role }`. See rules below                                                                                                         |
+| ⬜     | DELETE       | `/api/clubs/:clubId/members/:userId`    | Owner, Admin, or yourself | Remove an exec, or leave the club                                                                                                   |
+| ⬜     | POST         | `/api/clubs/:clubId/transfer-ownership` | Owner                     | `{ userId }`. Must already be a member. Old owner becomes admin. Use a transaction                                                  |
+| ⬜     | PUT / DELETE | `/api/clubs/:clubId/follow`             | Signed in                 | Follow or unfollow                                                                                                                  |
 
 ### Club permissions
 
@@ -100,7 +100,7 @@ The frontend shows the reason on the card ("From a club you follow", "People you
 | ⬜     | GET          | `/api/events/:id/attendees` | Signed in | **Only** users with `showOnAttendeeList = true` and a public profile             |
 | ⬜     | PUT / DELETE | `/api/events/:id/save`      | Signed in | Save or unsave                                                                   |
 | ⬜     | GET          | `/api/me/events`            | Signed in | Dashboard: my RSVPs and saved events, upcoming first                             |
-| ⬜     | GET          | `/api/me/clubs`             | Signed in | Clubs I'm an exec of, with my role                                               |
+| ✅     | GET          | `/api/me/clubs`             | Signed in | `MyClub[]`: clubs I'm an exec of, with my `role`, A to Z                         |
 
 **RSVPs are visible by default, with an option to RSVP anonymously.** `showOnAttendeeList` defaults to `true`. In the UI, show a toggle labelled "Show me on the attendee list" **inside the RSVP step itself, switched on**, so students see it every time and can turn it off before confirming. Students with a non-public profile never appear, whatever the toggle says.
 
@@ -132,15 +132,15 @@ Rules:
 
 ## Uploads
 
-| Status | Method | Path           | Who       | Notes                                                                                                                                               |
-| ------ | ------ | -------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| ⬜     | POST   | `/api/uploads` | Signed in | `{ folder: "clubs" \| "events" \| "users", contentType }` returns `{ key, uploadUrl, publicUrl }`. Only image content types. See `server/src/s3.ts` |
+| Status | Method | Path           | Who       | Notes                                                                                                                                                        |
+| ------ | ------ | -------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| ✅     | POST   | `/api/uploads` | Signed in | `{ folder: "clubs" \| "events" \| "users", contentType, size }` returns `{ key, uploadUrl, publicUrl }`. jpeg/png/webp/gif, max 5 MB. See `server/src/s3.ts` |
 
 Now **required**, not a stretch goal: club logos, event images, and profile pictures all depend on it.
 
-Upload flow: (1) ask `POST /api/uploads` for an upload URL, (2) the browser `PUT`s the file directly to `uploadUrl`, (3) save the result: `key` for clubs and events (via their `PATCH` endpoints), or `publicUrl` for your profile picture (via `authClient.updateUser`).
+Upload flow: (1) ask `POST /api/uploads` for an upload URL, sending the file's `type` and `size`, (2) the browser `PUT`s the file directly to `uploadUrl` within 5 minutes, with the **same `Content-Type` header** (S3 rejects a different type or size), (3) save the result: `key` for clubs and events (via their `PATCH` endpoints), or `publicUrl` for your profile picture (via `authClient.updateUser`).
 
-Security: when a `PATCH` saves a `logoKey` or `imageKey`, check it starts with the right folder (`clubs/` or `events/`). Otherwise someone could point their club's logo at any file in the bucket.
+Security: when a `PATCH` saves a `logoKey` or `imageKey`, check it starts with the right folder (`clubs/` or `events/`). Otherwise someone could point their club's logo at any file in the bucket. (Done: `uploadKeySchema` in shared. Profile pictures are checked the same way in `server/src/auth.ts`, so `user.image` can only be an Orbit upload.)
 
 ## Privacy rules (summary)
 

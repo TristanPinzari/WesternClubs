@@ -20,6 +20,7 @@ declare global {
     interface Request {
       user?: SessionUser;
       clubRole?: ClubRole; // set by requireClubRole, so handlers know your role
+      clubId?: string; // set by requireClubRole: the club id from the URL, already validated
     }
   }
 }
@@ -86,6 +87,7 @@ export function requireClubRole(...roles: ClubRole[]): RequestHandler {
     }
 
     req.clubRole = role; // so the route can apply finer rules (e.g. admins can't touch admins)
+    req.clubId = clubId.data;
     next(); // all checks passed: continue to the route
   };
 }
