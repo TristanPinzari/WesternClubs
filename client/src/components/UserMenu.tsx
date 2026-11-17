@@ -31,8 +31,17 @@ export default function UserMenu() {
   }
 
   async function handleSignOut() {
-    await authClient.signOut(); // clears the session cookie on the server
-    navigate("/");
+    try {
+      const { error } = await authClient.signOut(); // clears the session cookie on the server
+      if (!error) {
+        navigate("/");
+        return;
+      }
+    } catch {
+      // Network failure: fall through to the message below.
+    }
+    // Don't pretend it worked: the session cookie may still be valid.
+    window.alert("Couldn't sign out. Check your connection and try again.");
   }
 
   return (

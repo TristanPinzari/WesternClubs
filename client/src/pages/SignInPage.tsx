@@ -17,19 +17,26 @@ export default function SignInPage() {
     e.preventDefault();
     setError(null);
     setSubmitting(true);
-    const { error } = await authClient.signIn.email({
-      email: email.trim(),
-      password,
-    });
-    setSubmitting(false);
-
-    if (error) {
-      // Better Auth deliberately says "Invalid email or password" for both a wrong
-      // email and a wrong password, so attackers can't find out which emails exist.
-      setError(error.message ?? "Could not sign you in.");
-      return;
+    try {
+      // Returns { error } for server-reported problems, but THROWS on network failure.
+      const { error } = await authClient.signIn.email({
+        email: email.trim(),
+        password,
+      });
+      if (error) {
+        // Better Auth deliberately says "Invalid email or password" for both a wrong
+        // email and a wrong password, so attackers can't find out which emails exist.
+        setError(error.message ?? "Could not sign you in.");
+        return;
+      }
+      navigate("/");
+    } catch {
+      setError(
+        "Couldn't reach the server. Check your connection and try again.",
+      );
+    } finally {
+      setSubmitting(false); // always runs, so the button never stays stuck
     }
-    navigate("/");
   }
 
   return (

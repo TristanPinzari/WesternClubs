@@ -34,21 +34,29 @@ export default function SignUpPage() {
 
     setError(null);
     setSubmitting(true);
-    // Better Auth returns { data, error } instead of throwing. On success it also
-    // signs the new user in (sets the session cookie), so there's no second step.
-    const { error } = await authClient.signUp.email({
-      name: name.trim(),
-      email: email.trim(),
-      password,
-    });
-    setSubmitting(false);
-
-    if (error) {
-      setError(error.message ?? "Could not create your account.");
-      return;
+    try {
+      // Better Auth returns { error } for problems the server reports (e.g. the email is
+      // already used), but THROWS if the request never reaches the server (no Wi-Fi,
+      // server down). On success it also signs the new user in, so there's no second step.
+      const { error } = await authClient.signUp.email({
+        name: name.trim(),
+        email: email.trim(),
+        password,
+      });
+      if (error) {
+        setError(error.message ?? "Could not create your account.");
+        return;
+      }
+      // TODO(Rokyo): send new users to onboarding (pick interests, follow clubs) once it exists.
+      navigate("/");
+    } catch {
+      setError(
+        "Couldn't reach the server. Check your connection and try again.",
+      );
+    } finally {
+      // Runs on success, on error, AND after a throw, so the button never stays stuck.
+      setSubmitting(false);
     }
-    // TODO(Rokyo): send new users to onboarding (pick interests, follow clubs) once it exists.
-    navigate("/");
   }
 
   return (
