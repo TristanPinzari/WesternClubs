@@ -14,6 +14,7 @@ import {
   primaryKey,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from "drizzle-orm/pg-core";
 import { CLUB_ROLES, EVENT_CATEGORIES, type Links } from "@orbit/shared";
@@ -64,8 +65,12 @@ export const clubMember = pgTable(
   },
   (t) => [
     primaryKey({ columns: [t.clubId, t.userId] }), // a user can only be in a club once
-    // TODO(advanced): enforce "at most one owner per club" in the database.
-    //   Look up: Postgres *partial unique index* and Drizzle's `uniqueIndex().on().where()`.
+    // At most one owner per club. A *partial* unique index: club_id must be unique,
+    // but only among rows WHERE role = 'owner'. So many admins/editors are fine, and the
+    // database refuses a second owner even if an endpoint has a bug.
+    uniqueIndex("club_member_one_owner")
+      .on(t.clubId)
+      .where(sql`${t.role} = 'owner'`),
   ],
 );
 

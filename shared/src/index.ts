@@ -275,6 +275,35 @@ export interface MyClub extends ClubSummary {
   role: ClubRole;
 }
 
+// ---- Club members (execs) ----
+
+// GET /api/clubs/:clubId/members. Public, so never includes emails.
+export interface ClubMember {
+  userId: string;
+  name: string;
+  image: string | null;
+  role: ClubRole;
+}
+
+// Roles you can give through the members endpoints. "owner" only changes hands
+// through POST /api/clubs/:clubId/transfer-ownership.
+const assignableRole = z.enum(["admin", "editor"]);
+
+// POST /api/clubs/:clubId/members. The person needs an Orbit account already.
+export const addMemberSchema = z.object({
+  email: z.string().trim().toLowerCase().pipe(z.email()),
+  role: assignableRole,
+});
+export type AddMemberInput = z.infer<typeof addMemberSchema>;
+
+// PATCH /api/clubs/:clubId/members/:userId
+export const updateMemberSchema = z.object({ role: assignableRole });
+export type UpdateMemberInput = z.infer<typeof updateMemberSchema>;
+
+// POST /api/clubs/:clubId/transfer-ownership
+export const transferOwnershipSchema = z.object({ userId: z.string().min(1) });
+export type TransferOwnershipInput = z.infer<typeof transferOwnershipSchema>;
+
 // ---- Following ----
 
 // A student as shown in lists: just enough for a name and a picture.

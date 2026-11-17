@@ -9,6 +9,7 @@ import { errorHandler, loadSession } from "./middleware";
 import { clubsRouter } from "./routes/clubs";
 import { eventsRouter } from "./routes/events";
 import { meRouter } from "./routes/me";
+import { membersRouter } from "./routes/members";
 import { profilesRouter } from "./routes/profiles";
 import { uploadsRouter } from "./routes/uploads";
 import { usersRouter } from "./routes/users";
@@ -26,6 +27,7 @@ app.get("/api/health", (_req, res) => {
 });
 
 app.use("/api/clubs", clubsRouter);
+app.use("/api/clubs/:clubId", membersRouter); // members + transfer-ownership
 app.use("/api/events", eventsRouter);
 app.use("/api/uploads", uploadsRouter);
 app.use("/api/me", meRouter);

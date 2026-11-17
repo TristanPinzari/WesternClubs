@@ -34,11 +34,11 @@ On the frontend, use `authClient` in `client/src/lib/auth-client.ts` rather than
 | ✅     | POST         | `/api/clubs`                            | Signed in                 | `{ name, description? }`. Creator becomes **owner**. Taken slug gets `-2`, `-3`                                                     |
 | ✅     | PATCH        | `/api/clubs/:clubId`                    | Owner, Admin              | `updateClubSchema`: name, description, `logoKey` (from an upload to `clubs`), `links`. Never changes the slug. Returns `ClubDetail` |
 | ✅     | DELETE       | `/api/clubs/:clubId`                    | Owner                     | 204. Permanent: also deletes its members and events                                                                                 |
-| ⬜     | GET          | `/api/clubs/:clubId/members`            | Public                    | Execs and their roles                                                                                                               |
-| ⬜     | POST         | `/api/clubs/:clubId/members`            | Owner, Admin              | `{ email, role }`. Add an exec by their Orbit email                                                                                 |
-| ⬜     | PATCH        | `/api/clubs/:clubId/members/:userId`    | Owner, Admin              | `{ role }`. See rules below                                                                                                         |
-| ⬜     | DELETE       | `/api/clubs/:clubId/members/:userId`    | Owner, Admin, or yourself | Remove an exec, or leave the club                                                                                                   |
-| ⬜     | POST         | `/api/clubs/:clubId/transfer-ownership` | Owner                     | `{ userId }`. Must already be a member. Old owner becomes admin. Use a transaction                                                  |
+| ✅     | GET          | `/api/clubs/:clubId/members`            | Public                    | `ClubMember[]`: userId, name, picture, role (never email). Owner first                                                              |
+| ✅     | POST         | `/api/clubs/:clubId/members`            | Owner, Admin              | `{ email, role }`. Admins can only add editors. 404 if no account, 409 if already an exec                                           |
+| ✅     | PATCH        | `/api/clubs/:clubId/members/:userId`    | Owner, Admin              | `{ role }`. Owner only, except an admin can demote themselves. See rules below                                                      |
+| ✅     | DELETE       | `/api/clubs/:clubId/members/:userId`    | Owner, Admin, or yourself | Remove an exec, or leave the club. Admins can only remove editors. 204                                                              |
+| ✅     | POST         | `/api/clubs/:clubId/transfer-ownership` | Owner                     | `{ userId }`. Must already be an exec. Old owner becomes admin. Returns `ClubMember[]`                                              |
 | ✅     | PUT / DELETE | `/api/clubs/:clubId/follow`             | Signed in                 | Follow or unfollow. 204, safe to repeat                                                                                             |
 
 ### Club permissions
@@ -57,6 +57,8 @@ Rules worth enforcing:
 - Nobody can remove or demote the owner. The owner must transfer ownership first.
 - You can't set `role: "owner"` through the members endpoints. Only transfer-ownership does that.
 - The owner can't leave the club without transferring ownership first.
+- Only the owner can add, promote, demote, or remove admins. An admin can demote **themselves** to editor.
+- A club has at most one owner, enforced by the database too (the `club_member_one_owner` index).
 
 ### Club URLs (slugs)
 
