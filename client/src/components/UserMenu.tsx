@@ -4,6 +4,7 @@
 //   you're signed in (or as whom).
 import { Link, NavLink, useNavigate } from "react-router";
 import { authClient } from "../lib/auth-client";
+import Avatar from "./Avatar";
 
 export default function UserMenu() {
   const navigate = useNavigate();
@@ -46,16 +47,17 @@ export default function UserMenu() {
 
   return (
     <div className="ml-auto flex min-w-0 items-center gap-3 text-sm">
-      {/* TODO(Rokyo): show the profile picture (session.user.image) once uploads exist. */}
-      {/* Your name opens your dashboard: the events you're going to. */}
+      {/* Your picture and name open your dashboard: the events you're going to.
+          Shows your initial until profile pictures (uploads) exist. */}
       <NavLink
         to="/me"
         end
         className={({ isActive }) =>
-          `truncate font-medium ${isActive ? "text-violet-700" : ""}`
+          `flex min-w-0 items-center gap-2 font-medium ${isActive ? "text-violet-700" : ""}`
         }
       >
-        {session.user.name}
+        <Avatar name={session.user.name} image={session.user.image} size="sm" />
+        <span className="truncate">{session.user.name}</span>
       </NavLink>
       <button
         type="button"

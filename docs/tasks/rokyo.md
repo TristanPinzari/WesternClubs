@@ -75,10 +75,10 @@ Then, after sections 0–6:
 
 ### A. Profile pages [needs Naksh's task F]
 
-- [ ] `/me/profile`: an edit form for program, year, bio, links, public/private, and **interests**. Show interests as clickable chips from `EVENT_CATEGORIES` (a fixed list, so the "For you" feed can match them).
+- [x] `/me/profile`: an edit form for program, year, bio, links, public/private, and **interests**. Show interests as clickable chips from `EVENT_CATEGORIES` (a fixed list, so the "For you" feed can match them).
 - [ ] **Profile picture:** reuse Aryan's `ImageUpload` component, then save the `publicUrl` with `authClient.updateUser({ image })`
-- [ ] `/profile/:userId`: someone's public profile, with a **Follow** button
-- [ ] Make names on the attendee list link to profiles
+- [x] `/profile/:userId`: someone's public profile, with a **Follow** button
+- [x] Make names on the attendee list link to profiles
 - [ ] Show the user's picture in the header menu
 
 ### B. Following people [needs Naksh's task E]
