@@ -75,9 +75,15 @@ export const clubMember = pgTable(
 //   - yearOfStudy: integer, optional
 //   - bio: text, optional
 //   - interests: text array, default empty   (look up Drizzle `.array()`)
+//       Values must come from EVENT_CATEGORIES (a fixed list, NOT free text), so the
+//       "For you" feed can match interests to event categories. Validate with Zod.
 //   - links: jsonb, e.g. { instagram: "...", linkedin: "..." }, default {}
-//   - isPublic: boolean, default true        (controls profile visibility)
+//   - isPublic: boolean, default true        (controls profile visibility, and whether
+//       others can follow you)
 //   - createdAt, updatedAt
+//   Profile picture: NOT stored here. Use Better Auth's existing `user.image` column,
+//   and store the FULL public image URL in it (not an S3 key like club.logoKey), because
+//   Better Auth returns user.image directly in the session (useSession()).
 
 // event: posted by a club
 export const eventCategory = pgEnum("event_category", EVENT_CATEGORIES);
@@ -118,7 +124,8 @@ export const event = pgTable(
 //   - eventId: FK -> event (cascade); userId: FK -> user (cascade)
 //   - composite PK (eventId, userId)          (one RSVP per user per event)
 //   - status: enum from RSVP_STATUSES
-//   - showOnAttendeeList: boolean, default FALSE (opt-in, not opt-out)
+//   - showOnAttendeeList: boolean, default TRUE (visible unless the student turns it
+//       off, i.e. RSVPs anonymously)
 //   - purpose: enum from ATTENDANCE_PURPOSES, optional
 //   - lookingForBuddy: boolean, default false
 //   - createdAt, updatedAt
@@ -129,10 +136,13 @@ export const event = pgTable(
 // club_follow: students following clubs
 //   - userId, clubId, composite PK, both FKs cascade; createdAt
 
-// connection: connection requests between students
-//   - id: uuid PK
-//   - requesterId, addresseeId: text FKs -> user (cascade)
-//   - status: enum from CONNECTION_STATUSES, default "pending"
-//   - createdAt; respondedAt: timestamp, optional
-//   TODO(advanced): stop duplicate pairs. If A requests B, B shouldn't be able to
-//   create a separate B->A row. Look up: unique index on least()/greatest().
+// user_follow: students following other students (one-way, no approval, like club_follow)
+//   - followerId: text FK -> user (cascade)   (the person who clicked "Follow")
+//   - followeeId: text FK -> user (cascade)   (the person being followed)
+//   - composite PK (followerId, followeeId)   (can't follow the same person twice)
+//   - createdAt
+//   Rules (enforce in the API): you can't follow yourself, and you can't follow
+//   someone whose profile isn't public.
+//   TODO(advanced): also enforce "can't follow yourself" in the database. Look up:
+//   Postgres CHECK constraint and Drizzle's `check()`.
+//   Note: we deliberately never show follower COUNTS or follower LISTS (see docs/API.md).
