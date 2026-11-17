@@ -49,8 +49,8 @@ You'll build one complete feature through every layer: the database table, the A
 
 ## 5. The dashboard
 
-- [ ] `GET /api/me/events`: my RSVPs and saved events, upcoming first
-- [ ] A `/me` page listing them, grouped into Going / Interested / Saved
+- [x] `GET /api/me/events`: my RSVPs and saved events, upcoming first
+- [x] A `/me` page listing them, grouped into Going / Interested / Saved
 
 ## 6. Stretch goals
 
