@@ -54,9 +54,41 @@ You'll build one complete feature through every layer: the database table, the A
 
 ## 6. Stretch goals
 
-- [ ] `GET /api/events/:id/attendees` and an attendee list on the event page. Only show people who opted in!
+- [ ] `GET /api/events/:id/attendees` and an attendee list on the event page. Never show people who RSVP'd anonymously!
 
 ## Tips
 
 - When something breaks, check three places: the browser console, the Network tab in DevTools (what did the API return?), and the terminal running the server.
 - Ask questions early. Being stuck for 30 minutes means it's time to ask.
+
+---
+
+## New tasks (added Nov 16)
+
+Your sections 0–5 still stand, with these changes:
+
+- **RSVPs are visible by default, with an option to RSVP anonymously.** In section 4, put a toggle labelled **"Show me on the attendee list"** right inside the RSVP step, switched **on** by default, so students see it every time and can turn it off. When you build the `event_rsvp` table, make `showOnAttendeeList` default to **true** (the design note in `schema.ts` says so).
+- **The attendee list (section 6) is now required, not a stretch goal.** Build it **before** the dashboard (section 5). "See who else is going" is a big part of our pitch.
+- **Save is now low priority.** "Interested" already covers it. Build Save last, or skip it if time runs out.
+
+Then, after sections 0–6:
+
+### A. Profile pages [needs Naksh's task F]
+
+- [ ] `/me/profile`: an edit form for program, year, bio, links, public/private, and **interests**. Show interests as clickable chips from `EVENT_CATEGORIES` (a fixed list, so the "For you" feed can match them).
+- [ ] **Profile picture:** reuse Aryan's `ImageUpload` component, then save the `publicUrl` with `authClient.updateUser({ image })`
+- [ ] `/profile/:userId`: someone's public profile, with a **Follow** button
+- [ ] Make names on the attendee list link to profiles
+- [ ] Show the user's picture in the header menu
+
+### B. Following people [needs Naksh's task E]
+
+- [ ] The Follow / Unfollow button on profiles (`PUT` / `DELETE /api/users/:userId/follow`)
+- [ ] A "Following" page (`GET /api/me/following`) listing the clubs and people I follow
+- [ ] **Don't show follower counts or follower lists anywhere.** That's a team decision.
+
+### C. Onboarding [needs profiles and club follows]
+
+- [ ] Right after sign-up: one screen to **pick your interests** and **follow a few clubs**, then go to the feed. Without it, a brand-new user's "For you" feed would be empty.
+
+Until Naksh's endpoints land, you can build these pages with fake data, the way Aryan did for the event feed.
