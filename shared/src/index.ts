@@ -255,6 +255,7 @@ export const linksSchema = z.object({
 // GET /api/clubs/:slug and PATCH /api/clubs/:clubId return this.
 export interface ClubDetail extends ClubSummary {
   links: Links;
+  isFollowing: boolean; // does the signed-in user follow this club? (false if signed out)
 }
 
 // Send only what changed. There's no slug field: renaming keeps the old URL working.
@@ -272,6 +273,22 @@ export type UpdateClubInput = z.infer<typeof updateClubSchema>;
 // still checks permissions on every request).
 export interface MyClub extends ClubSummary {
   role: ClubRole;
+}
+
+// ---- Following ----
+
+// A student as shown in lists: just enough for a name and a picture.
+export interface UserSummary {
+  id: string;
+  name: string;
+  image: string | null; // profile picture URL
+}
+
+// GET /api/me/following. Only you can see who you follow. There's deliberately no
+// endpoint for followers or follower counts.
+export interface MyFollowing {
+  clubs: ClubSummary[];
+  users: UserSummary[];
 }
 
 // TODO: add schemas and types as you build each endpoint in docs/API.md

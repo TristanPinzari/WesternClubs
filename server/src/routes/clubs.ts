@@ -10,10 +10,11 @@ import {
   type ClubSummary,
   type Paginated,
 } from "@orbit/shared";
-import { count, eq, ilike, like, or } from "drizzle-orm";
+import { and, count, eq, ilike, like, or } from "drizzle-orm";
 import { Router } from "express";
+import { z } from "zod";
 import { db } from "../db";
-import { club, clubMember, event } from "../db/schema";
+import { club, clubFollow, clubMember, event } from "../db/schema";
 import { requireAuth, requireClubRole } from "../middleware";
 import { mediaUrl } from "../s3";
 import { endsAfterStart, getEventDetail } from "./events";
@@ -30,8 +31,20 @@ export function toClubSummary(row: typeof club.$inferSelect): ClubSummary {
   };
 }
 
-function toClubDetail(row: typeof club.$inferSelect): ClubDetail {
-  return { ...toClubSummary(row), links: row.links };
+function toClubDetail(
+  row: typeof club.$inferSelect,
+  isFollowing: boolean,
+): ClubDetail {
+  return { ...toClubSummary(row), links: row.links, isFollowing };
+}
+
+async function isFollowingClub(clubId: string, userId: string | undefined) {
+  if (!userId) return false; // signed out
+  const [row] = await db
+    .select({ clubId: clubFollow.clubId })
+    .from(clubFollow)
+    .where(and(eq(clubFollow.clubId, clubId), eq(clubFollow.userId, userId)));
+  return !!row; // !! turns "a row or undefined" into true/false
 }
 
 // GET /api/clubs?q=ai&limit=20&offset=0
@@ -70,7 +83,7 @@ clubsRouter.get("/:slug", async (req, res) => {
     res.status(404).json({ error: "Club not found" });
     return;
   }
-  res.json(toClubDetail(row));
+  res.json(toClubDetail(row, await isFollowingClub(row.id, req.user?.id)));
 });
 
 // "Western AI Club!" -> "western-ai-club". Accents are stripped ("Café" -> "cafe").
@@ -139,7 +152,7 @@ clubsRouter.post("/", requireAuth, async (req, res) => {
           .values({ clubId: row.id, userId: req.user!.id, role: "owner" });
         return row;
       });
-      res.status(201).json(toClubDetail(created));
+      res.status(201).json(toClubDetail(created, false));
       return;
     } catch (err) {
       // Another request grabbed this slug between findFreeSlug and our insert (two
@@ -192,7 +205,7 @@ clubsRouter.patch(
       .set({ ...changes, updatedAt: new Date() })
       .where(eq(club.id, req.clubId!))
       .returning();
-    res.json(toClubDetail(row));
+    res.json(toClubDetail(row, await isFollowingClub(row.id, req.user!.id)));
   },
 );
 
@@ -208,3 +221,41 @@ clubsRouter.delete(
     res.status(204).end();
   },
 );
+
+// PUT /api/clubs/:clubId/follow  -> 204    (follow)
+// DELETE /api/clubs/:clubId/follow  -> 204 (unfollow)
+// Both are safe to repeat: following twice, or unfollowing a club you don't follow,
+// changes nothing. That's why they're PUT/DELETE ("make it so") rather than POST.
+clubsRouter.put("/:clubId/follow", requireAuth, async (req, res) => {
+  const clubId = z.uuid().safeParse(req.params.clubId);
+  const [found] = clubId.success
+    ? await db
+        .select({ id: club.id })
+        .from(club)
+        .where(eq(club.id, clubId.data))
+    : [];
+  if (!found) {
+    res.status(404).json({ error: "Club not found" });
+    return;
+  }
+  await db
+    .insert(clubFollow)
+    .values({ userId: req.user!.id, clubId: found.id })
+    .onConflictDoNothing(); // already following: fine, nothing to do
+  res.status(204).end();
+});
+
+clubsRouter.delete("/:clubId/follow", requireAuth, async (req, res) => {
+  const clubId = z.uuid().safeParse(req.params.clubId);
+  if (clubId.success) {
+    await db
+      .delete(clubFollow)
+      .where(
+        and(
+          eq(clubFollow.clubId, clubId.data),
+          eq(clubFollow.userId, req.user!.id),
+        ),
+      );
+  }
+  res.status(204).end();
+});

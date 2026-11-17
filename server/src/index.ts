@@ -10,6 +10,7 @@ import { clubsRouter } from "./routes/clubs";
 import { eventsRouter } from "./routes/events";
 import { meRouter } from "./routes/me";
 import { uploadsRouter } from "./routes/uploads";
+import { usersRouter } from "./routes/users";
 
 const app = express();
 
@@ -27,7 +28,8 @@ app.use("/api/clubs", clubsRouter);
 app.use("/api/events", eventsRouter);
 app.use("/api/uploads", uploadsRouter);
 app.use("/api/me", meRouter);
-// TODO: profiles, rsvps, connections... (see docs/API.md)
+app.use("/api/users", usersRouter);
+// TODO: profiles, rsvps, feed... (see docs/API.md)
 
 app.use(errorHandler);
 

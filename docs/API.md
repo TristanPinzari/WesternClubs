@@ -30,7 +30,7 @@ On the frontend, use `authClient` in `client/src/lib/auth-client.ts` rather than
 | Status | Method       | Path                                    | Who                       | Notes                                                                                                                               |
 | ------ | ------------ | --------------------------------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
 | ✅     | GET          | `/api/clubs?q=&limit=&offset=`          | Public                    | Search and list clubs                                                                                                               |
-| ✅     | GET          | `/api/clubs/:slug`                      | Public                    | Club details (`ClubDetail`, includes `links`)                                                                                       |
+| ✅     | GET          | `/api/clubs/:slug`                      | Public                    | Club details (`ClubDetail`: includes `links`, and `isFollowing` for the signed-in user)                                             |
 | ✅     | POST         | `/api/clubs`                            | Signed in                 | `{ name, description? }`. Creator becomes **owner**. Taken slug gets `-2`, `-3`                                                     |
 | ✅     | PATCH        | `/api/clubs/:clubId`                    | Owner, Admin              | `updateClubSchema`: name, description, `logoKey` (from an upload to `clubs`), `links`. Never changes the slug. Returns `ClubDetail` |
 | ✅     | DELETE       | `/api/clubs/:clubId`                    | Owner                     | 204. Permanent: also deletes its members and events                                                                                 |
@@ -39,7 +39,7 @@ On the frontend, use `authClient` in `client/src/lib/auth-client.ts` rather than
 | ⬜     | PATCH        | `/api/clubs/:clubId/members/:userId`    | Owner, Admin              | `{ role }`. See rules below                                                                                                         |
 | ⬜     | DELETE       | `/api/clubs/:clubId/members/:userId`    | Owner, Admin, or yourself | Remove an exec, or leave the club                                                                                                   |
 | ⬜     | POST         | `/api/clubs/:clubId/transfer-ownership` | Owner                     | `{ userId }`. Must already be a member. Old owner becomes admin. Use a transaction                                                  |
-| ⬜     | PUT / DELETE | `/api/clubs/:clubId/follow`             | Signed in                 | Follow or unfollow                                                                                                                  |
+| ✅     | PUT / DELETE | `/api/clubs/:clubId/follow`             | Signed in                 | Follow or unfollow. 204, safe to repeat                                                                                             |
 
 ### Club permissions
 
@@ -119,11 +119,11 @@ The frontend shows the reason on the card ("From a club you follow", "People you
 
 Following is **one-way and needs no approval**: follow a club or a person, and their events show up higher in your "For you" feed.
 
-| Status | Method       | Path                        | Who       | Notes                                                                             |
-| ------ | ------------ | --------------------------- | --------- | --------------------------------------------------------------------------------- |
-| ⬜     | PUT / DELETE | `/api/clubs/:clubId/follow` | Signed in | Follow or unfollow a club (also listed under Clubs)                               |
-| ⬜     | PUT / DELETE | `/api/users/:userId/follow` | Signed in | Follow or unfollow a student. 400 for yourself. 404 if their profile isn't public |
-| ⬜     | GET          | `/api/me/following`         | Signed in | `{ clubs, users }` I follow. Only I can see my own list                           |
+| Status | Method       | Path                        | Who       | Notes                                                                                                  |
+| ------ | ------------ | --------------------------- | --------- | ------------------------------------------------------------------------------------------------------ |
+| ✅     | PUT / DELETE | `/api/clubs/:clubId/follow` | Signed in | Follow or unfollow a club (also listed under Clubs). 204, safe to repeat                               |
+| ✅     | PUT / DELETE | `/api/users/:userId/follow` | Signed in | Follow or unfollow a student. 400 for yourself. 404 if their profile isn't public. 204, safe to repeat |
+| ✅     | GET          | `/api/me/following`         | Signed in | `MyFollowing`: `{ clubs, users }` I follow, A to Z. Only I can see my own list                         |
 
 Rules:
 
