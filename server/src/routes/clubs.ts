@@ -3,13 +3,15 @@
 // WITHOUT IT: /api/clubs would return 404, and the Clubs page would show an error.
 import {
   clubListQuerySchema,
+  createClubSchema,
   type ClubSummary,
   type Paginated,
 } from "@orbit/shared";
-import { count, eq, ilike } from "drizzle-orm";
+import { count, eq, ilike, like, or } from "drizzle-orm";
 import { Router } from "express";
 import { db } from "../db";
-import { club } from "../db/schema";
+import { club, clubMember } from "../db/schema";
+import { requireAuth } from "../middleware";
 import { mediaUrl } from "../s3";
 
 export const clubsRouter = Router();
@@ -63,6 +65,81 @@ clubsRouter.get("/:slug", async (req, res) => {
   res.json(toClubSummary(row));
 });
 
-// TODO: POST /api/clubs (requireAuth). Insert the club AND a club_member row with
-//   role "owner" for req.user. Do both inside db.transaction(...) so you never end
-//   up with a club that has no owner.
+// "Western AI Club!" -> "western-ai-club". Accents are stripped ("Café" -> "cafe").
+// Returns "" if the name has no letters or numbers (e.g. "!!!").
+export function slugify(name: string): string {
+  return name
+    .normalize("NFKD") // split "é" into "e" + an accent mark...
+    .replace(/\p{M}/gu, "") // ...then drop the accent marks (\p{M} = any "mark" character)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-") // any run of other characters becomes one "-"
+    .replace(/^-+|-+$/g, ""); // no "-" at the start or end
+}
+
+// The first free slug: "western-ai" if nobody has it, otherwise "western-ai-2",
+// "western-ai-3", ... One query, however many clubs share the name.
+async function findFreeSlug(base: string): Promise<string> {
+  const rows = await db
+    .select({ slug: club.slug })
+    .from(club)
+    .where(or(eq(club.slug, base), like(club.slug, `${base}-%`)));
+  const taken = new Set(rows.map((r) => r.slug));
+  if (!taken.has(base)) return base;
+  let n = 2;
+  while (taken.has(`${base}-${n}`)) n++;
+  return `${base}-${n}`;
+}
+
+// True if Postgres rejected the insert because the slug is already used (error code
+// 23505 = unique violation, on the club.slug constraint). Drizzle wraps database
+// errors, so the Postgres error is in `cause`.
+function isSlugTaken(err: unknown): boolean {
+  const cause =
+    err instanceof Error
+      ? (err.cause as { code?: string; constraint?: string } | undefined)
+      : undefined;
+  return cause?.code === "23505" && cause.constraint === "club_slug_unique";
+}
+
+const MAX_SLUG_ATTEMPTS = 5;
+
+// POST /api/clubs  { name, description? }  -> 201 with the new club
+// Any signed-in student can create a club, and they become its owner. Two clubs can
+// share a name; the second one gets a numbered slug ("western-ai-2").
+clubsRouter.post("/", requireAuth, async (req, res) => {
+  const input = createClubSchema.parse(req.body);
+  const base = slugify(input.name);
+  if (!base) {
+    res
+      .status(400)
+      .json({ error: "Club name must contain at least one letter or number" });
+    return;
+  }
+
+  for (let attempt = 1; ; attempt++) {
+    const slug = await findFreeSlug(base);
+    try {
+      // All or nothing: if either insert fails, Postgres undoes both, so a club can
+      // never exist without an owner.
+      const created = await db.transaction(async (tx) => {
+        const [row] = await tx
+          .insert(club)
+          .values({ name: input.name, slug, description: input.description })
+          .returning();
+        await tx
+          .insert(clubMember)
+          .values({ clubId: row.id, userId: req.user!.id, role: "owner" });
+        return row;
+      });
+      res.status(201).json(toClubSummary(created));
+      return;
+    } catch (err) {
+      // Another request grabbed this slug between findFreeSlug and our insert (two
+      // people creating "Western AI" at the same moment). The database's unique
+      // constraint caught it. Postgres has aborted this transaction, so we can't
+      // retry inside it: loop round, pick a new slug, and start a fresh transaction.
+      if (isSlugTaken(err) && attempt < MAX_SLUG_ATTEMPTS) continue;
+      throw err; // a real bug, or still colliding after 5 tries: errorHandler -> 500
+    }
+  }
+});

@@ -122,6 +122,14 @@ export interface EventDetail extends EventSummary {
   // TODO: goingCount / interestedCount once the event_rsvp table exists
 }
 
+// ---- Clubs (POST /api/clubs) ----
+
+// The request body for creating a club. The server makes the slug from the name.
+export const createClubSchema = z.object({
+  name: z.string().trim().min(2).max(80),
+  description: z.string().trim().max(2000).default(""),
+});
+export type CreateClubInput = z.infer<typeof createClubSchema>;
+
 // TODO: add schemas and types as you build each endpoint in docs/API.md, e.g.
-//   - createClubSchema       (name, description)
 //   - createEventSchema      (title, category, startsAt, ... see the event table notes)
