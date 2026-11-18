@@ -111,14 +111,14 @@ All your planned backend work is done. These are new, and the demo needs the fir
 
 Without this, the feed and attendee lists are empty during the demo.
 
-- [ ] A seed step (in `server/src/db/seed.ts`, or a separate `npm run db:seed:demo`) that creates:
+- [x] A seed step (in `server/src/db/seed.ts`, or a separate `npm run db:seed:demo`) that creates:
   - **One club exec**, the owner of one of the demo clubs (a `club_member` row with role `owner`)
   - **4–5 students** with profiles and interests. Make at least one profile **private**, to show it stays off attendee lists.
   - **Follows:** students following clubs and each other
   - **RSVPs** on upcoming demo events, mostly public, plus at least one **anonymous**
-- [ ] Create users through Better Auth (`auth.api.signUpEmail`) so passwords are hashed properly. Make it **safe to run twice**: skip accounts that already exist.
-- [ ] Read the demo password from an env var (e.g. `DEMO_PASSWORD`). **Don't commit it.** These accounts will exist on the deployed site.
-- [ ] Write the demo logins (emails only) in the README or the pitch notes, so whoever presents knows which account to use.
+- [x] Create users through Better Auth (`auth.api.signUpEmail`) so passwords are hashed properly. Make it **safe to run twice**: skip accounts that already exist.
+- [x] Read the demo password from an env var (e.g. `DEMO_PASSWORD`). **Don't commit it.** These accounts will exist on the deployed site.
+- [x] Write the demo logins (emails only) in the README or the pitch notes, so whoever presents knows which account to use.
 
 ### 2. Help Tristan deploy
 
