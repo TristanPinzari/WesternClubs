@@ -119,7 +119,39 @@ export interface EventDetail extends EventSummary {
   eligibility: string;
   registrationUrl: string | null;
   cancelledAt: string | null; // the detail page still loads cancelled events, so show a banner
-  // TODO: goingCount / interestedCount once the event_rsvp table exists
+  // Going/interested counts live in RsvpSummary (GET /api/events/:id/rsvp), so the
+  // RSVP panel can refresh them without reloading the whole event.
+}
+
+// ---- RSVPs (PUT /api/events/:id/rsvp, GET /api/events/:id/rsvp, /attendees) ----
+
+// Body for PUT /api/events/:id/rsvp. Creates the RSVP, or replaces your existing one.
+export const rsvpBodySchema = z.object({
+  status: z.enum(RSVP_STATUSES),
+  // Visible by default: leaving it out means "show me". false = RSVP anonymously.
+  showOnAttendeeList: z.boolean().default(true),
+  purpose: z.enum(ATTENDANCE_PURPOSES).nullable().default(null),
+  lookingForBuddy: z.boolean().default(false),
+});
+export type RsvpBody = z.input<typeof rsvpBodySchema>; // what the client sends
+export type MyRsvp = z.output<typeof rsvpBodySchema>; // what's stored (defaults filled in)
+
+// GET /api/events/:id/rsvp: the counts anyone can see, plus your own RSVP.
+// Counts include anonymous RSVPs: a number doesn't reveal who.
+export interface RsvpSummary {
+  goingCount: number;
+  interestedCount: number;
+  mine: MyRsvp | null; // null if you haven't RSVP'd, or aren't signed in
+}
+
+// One person on an event's attendee list (GET /api/events/:id/attendees).
+export interface Attendee {
+  userId: string;
+  name: string;
+  image: string | null;
+  status: RsvpStatus;
+  purpose: AttendancePurpose | null;
+  lookingForBuddy: boolean;
 }
 
 // ---- Clubs (POST /api/clubs) ----
