@@ -4,3 +4,8 @@
   WITHOUT IT: None of the Tailwind classes would do anything, so the app would be unstyled.
 */
 @import "tailwindcss";
+
+/* Reserve scrollbar width so loading results never shift the centered layout. */
+html {
+  scrollbar-gutter: stable;
+}

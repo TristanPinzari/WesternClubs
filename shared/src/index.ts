@@ -359,3 +359,13 @@ export const updateProfileSchema = z
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
 // TODO: add schemas and types as you build each endpoint in docs/API.md
+
+// ---- Aryan's feed: use only merged tables; public-RSVP ranking is still pending. ----
+export const feedListQuerySchema = eventListQuerySchema.pick({
+  limit: true,
+  offset: true,
+});
+export type FeedReason = "followed_club" | "followed_user" | "interest" | null;
+export interface FeedEvent extends EventSummary {
+  reason: FeedReason;
+}

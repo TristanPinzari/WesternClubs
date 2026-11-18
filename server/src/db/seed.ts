@@ -106,8 +106,9 @@ try {
       `Seeded ${demoClubs.length} clubs, ${demoEvents.length} upcoming demo events, and 2 test fixtures.`,
     );
   });
-} catch {
-  // Do not print connection details from database errors; the private URL stays private.
+} catch (err: unknown) {
+  // Show the cause (missing column, invalid value, etc.) before the setup hint.
+  console.error(err instanceof Error ? err.message : err);
   console.error(
     "Seed failed. Check your personal Neon connection and apply Naksh's schema first.",
   );

@@ -8,6 +8,12 @@ import HomePage from "./pages/HomePage";
 import EventDetailPage from "./pages/EventDetailPage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
+import ClubDetailPage from "./pages/ClubDetailPage";
+import CreateClubPage from "./pages/CreateClubPage";
+import ClubSettingsPage from "./pages/ClubSettingsPage";
+import EventEditorPage from "./pages/EventEditorPage";
+import MyClubsPage from "./pages/MyClubsPage";
+import { useMockExec } from "./lib/demoMode";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? "font-semibold text-violet-700" : "text-gray-600";
@@ -16,15 +22,19 @@ export default function App() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
       <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
-        <nav className="mx-auto flex max-w-2xl items-center gap-6 px-4 py-3">
+        <nav className="mx-auto flex max-w-2xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3">
           <span className="text-lg font-bold text-violet-700">Orbit</span>
           <NavLink to="/" end className={navLinkClass}>
             Events
           </NavLink>
+          <NavLink to="/me/clubs" className={navLinkClass}>
+            My clubs
+          </NavLink>
           <NavLink to="/clubs" className={navLinkClass}>
             Clubs
           </NavLink>
-          <UserMenu />
+          {/* Demo identities never call real auth; live mode uses Rokyo's merged menu. */}
+          {!useMockExec && <UserMenu />}
         </nav>
       </header>
 
@@ -32,6 +42,12 @@ export default function App() {
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/clubs" element={<ClubsPage />} />
+          <Route path="/clubs/new" element={<CreateClubPage />} />
+          <Route path="/clubs/:slug" element={<ClubDetailPage />} />
+          <Route path="/clubs/:slug/settings" element={<ClubSettingsPage />} />
+          <Route path="/clubs/:slug/events/new" element={<EventEditorPage />} />
+          <Route path="/me/clubs" element={<MyClubsPage />} />
+          <Route path="/events/:id/edit" element={<EventEditorPage />} />
           {/* :id becomes useParams().id on the detail page; cards link here. */}
           <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/sign-in" element={<SignInPage />} />

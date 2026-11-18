@@ -11,6 +11,8 @@ import {
   registrationLink,
 } from "../lib/eventDisplay";
 import { getEvent, useMockEvents } from "../lib/events";
+import { useClubAccess } from "../hooks/useClubAccess";
+import { canPostEvent } from "../lib/execTypes";
 
 export default function EventDetailPage() {
   const { id } = useParams();
@@ -18,6 +20,7 @@ export default function EventDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
+  const access = useClubAccess(event?.club.id);
 
   useEffect(() => {
     let ignore = false;
@@ -103,9 +106,22 @@ export default function EventDetailPage() {
             </p>
           )}
           <p className="mt-5 text-sm font-semibold text-violet-700">
-            {categoryLabels[event.category]} · {event.club.name}
+            {categoryLabels[event.category]} ·{" "}
+            <Link to={`/clubs/${event.club.slug}`} className="underline">
+              {event.club.name}
+            </Link>
           </p>
           <h1 className="mt-2 break-words text-3xl font-bold">{event.title}</h1>
+          {!access.loading &&
+            canPostEvent(access.role) &&
+            !event.cancelledAt && (
+              <Link
+                to={`/events/${event.id}/edit`}
+                className="mt-2 inline-flex min-h-11 items-center text-violet-700 underline"
+              >
+                Edit event
+              </Link>
+            )}
           {event.imageUrl && (
             <img
               src={event.imageUrl}

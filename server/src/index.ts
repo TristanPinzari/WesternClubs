@@ -13,6 +13,7 @@ import { membersRouter } from "./routes/members";
 import { profilesRouter } from "./routes/profiles";
 import { uploadsRouter } from "./routes/uploads";
 import { usersRouter } from "./routes/users";
+import { feedRouter } from "./routes/feed";
 
 const app = express();
 
@@ -33,7 +34,8 @@ app.use("/api/uploads", uploadsRouter);
 app.use("/api/me", meRouter);
 app.use("/api/users", usersRouter);
 app.use("/api/profiles", profilesRouter);
-// TODO: rsvps, feed... (see docs/API.md)
+app.use("/api/feed", feedRouter);
+// TODO(Rokyo): rsvps. Feed ranking based on public RSVPs waits for that table.
 
 app.use(errorHandler);
 

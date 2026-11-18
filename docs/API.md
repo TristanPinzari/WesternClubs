@@ -80,6 +80,17 @@ For `PATCH /api/events/:id` and `POST /api/events/:id/cancel`, look up the event
 
 ## "For you" feed
 
+**Incremental implementation (Aryan, Nov 18):** this branch now serves authenticated
+`GET /api/feed` using followed clubs (score 3), profile interests (score 1), then
+other upcoming events (score 0). One parameterized SQL query returns the page and
+total from the same snapshot, including an empty page past the end. Query validation
+and response types are `feedListQuerySchema` and `FeedEvent` in shared.
+
+The overall task remains unchecked below because score 2 (`followed_user`) waits
+for Rokyo's RSVP table to merge. No RSVP data is currently queried and the endpoint
+does not yet return that reason. When adding it, exclude anonymous RSVPs and
+private profiles; never return attendee identities in the feed.
+
 | Status | Method | Path                       | Who       | Notes                                                                                                       |
 | ------ | ------ | -------------------------- | --------- | ----------------------------------------------------------------------------------------------------------- |
 | ⬜     | GET    | `/api/feed?limit=&offset=` | Signed in | Upcoming, not-cancelled events, ranked for the signed-in user. Each item is an `EventSummary` plus `reason` |
