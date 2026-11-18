@@ -1,7 +1,7 @@
 // WHAT: Public club page, upcoming events, following, and role-aware exec entry points.
 // WITHOUT IT: Club links have no destination and execs cannot find their posting tools.
-import { useCallback, useState } from "react";
-import { Link, useLocation, useParams } from "react-router";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useLocation, useNavigate, useParams } from "react-router";
 import EventCard from "../components/EventCard";
 import FollowClubButton from "../components/FollowClubButton";
 import RequestState from "../components/RequestState";
@@ -18,6 +18,16 @@ export default function ClubDetailPage() {
 }
 function ClubDetail({ slug }: { slug: string }) {
   const location = useLocation();
+  const navigate = useNavigate();
+  // The create-club page may pass a one-time warning in history state. Keep it in local
+  // state, then clear it from history so it doesn't come back on reload or Back.
+  const [warning] = useState<string | null>(() =>
+    typeof location.state?.warning === "string" ? location.state.warning : null,
+  );
+  useEffect(() => {
+    if (location.state?.warning)
+      navigate(location.pathname, { replace: true, state: null });
+  }, [location.pathname, location.state, navigate]);
   const club = useResource(useCallback(() => getClub(slug), [slug]));
   const clubId = club.data?.id;
   const access = useClubAccess(clubId);
@@ -40,12 +50,12 @@ function ClubDetail({ slug }: { slug: string }) {
         ← All clubs
       </Link>
       <RequestState {...club} />
-      {typeof location.state?.warning === "string" && (
+      {warning && (
         <p
           role="alert"
           className="my-3 rounded-lg bg-amber-50 p-3 text-amber-900"
         >
-          {location.state.warning}
+          {warning}
         </p>
       )}
       {club.data && (
@@ -58,11 +68,11 @@ function ClubDetail({ slug }: { slug: string }) {
                 className="h-20 w-20 shrink-0 rounded-full object-cover"
               />
             )}
-            <h1 className="min-w-0 break-words text-2xl font-bold">
+            <h1 className="min-w-0 wrap-break-word text-2xl font-bold">
               {club.data.name}
             </h1>
           </div>
-          <p className="mt-4 whitespace-pre-wrap break-words text-gray-700">
+          <p className="mt-4 whitespace-pre-wrap wrap-break-word text-gray-700">
             {club.data.description}
           </p>
           <ul className="mt-3 flex flex-wrap gap-4">
@@ -87,6 +97,7 @@ function ClubDetail({ slug }: { slug: string }) {
               <FollowClubButton
                 key={`${access.viewer.user.id}:${clubId}`}
                 clubId={club.data.id}
+                initialFollowing={club.data.isFollowing}
               />
             )}
             {!access.loading && canPostEvent(access.role) && (

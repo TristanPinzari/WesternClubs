@@ -7,7 +7,6 @@ import {
   updateEventSchema,
   type ClubSummary,
   type Paginated,
-  type MyFollowing,
 } from "@orbit/shared";
 import { apiGet, apiWrite } from "./api";
 import { useMockExec } from "./demoMode";
@@ -53,6 +52,11 @@ export async function createClub(
   });
   if (useMockExec) return { club: (await demo()).demoCreateClub(input) };
   const created = await apiWrite<ClubSummary>("/clubs", "POST", basic);
+  // Nothing extra to save: skip the PATCH (and its possible misleading warning).
+  const hasDetails =
+    Boolean(details.logoKey) || Object.keys(details.links ?? {}).length > 0;
+  if (!hasDetails)
+    return { club: { ...created, links: {}, isFollowing: false } };
   try {
     const club = await apiWrite<ClubDetails>(
       `/clubs/${encodeURIComponent(created.id)}`,
@@ -95,11 +99,6 @@ export async function writeMember(
     action === "role" ? "PATCH" : "DELETE",
     action === "role" ? { role } : undefined,
   );
-}
-export async function getFollowedClubIds(): Promise<string[]> {
-  if (useMockExec) return (await demo()).demoFollowing();
-  const result = await apiGet<MyFollowing>("/me/following");
-  return result.clubs.map((club) => club.id);
 }
 export const followClub = async (id: string, follow: boolean) =>
   useMockExec

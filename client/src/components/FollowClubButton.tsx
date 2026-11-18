@@ -1,21 +1,27 @@
 // WHAT: One-way follow/unfollow control. No follower counts or lists are requested.
 // WITHOUT IT: Students could view clubs but not prioritize them in their own feed.
-import { useCallback, useState } from "react";
-import { followClub, getFollowedClubIds } from "../lib/clubs";
-import { useResource } from "../hooks/useResource";
+import { useState } from "react";
+import { followClub } from "../lib/clubs";
 import RequestState from "./RequestState";
 
-export default function FollowClubButton({ clubId }: { clubId: string }) {
-  const state = useResource(useCallback(getFollowedClubIds, []));
+// `initialFollowing` comes from GET /clubs/:slug (ClubDetail.isFollowing), so the
+// button doesn't need to download the user's whole following list.
+export default function FollowClubButton({
+  clubId,
+  initialFollowing,
+}: {
+  clubId: string;
+  initialFollowing: boolean;
+}) {
+  const [following, setFollowing] = useState(initialFollowing);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const following = state.data?.includes(clubId) ?? false;
   async function toggle() {
     setBusy(true);
     setError(null);
     try {
       await followClub(clubId, !following);
-      state.retry();
+      setFollowing(!following);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Could not update follow.");
     } finally {
@@ -24,11 +30,11 @@ export default function FollowClubButton({ clubId }: { clubId: string }) {
   }
   return (
     <div>
-      <RequestState error={state.error || error} retry={state.retry} />
+      <RequestState error={error} />
       <button
         type="button"
         aria-pressed={following}
-        disabled={state.loading || !state.data || busy}
+        disabled={busy}
         onClick={toggle}
         className="min-h-11 rounded-lg border border-violet-700 px-4 py-2 text-violet-700 disabled:opacity-50"
       >

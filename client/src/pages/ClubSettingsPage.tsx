@@ -49,8 +49,10 @@ function ClubSettings({ slug }: { slug: string }) {
               state.retry();
             }}
           />
+          {/* Not keyed by role: a transfer changes the role, and remounting would lose
+              the "Ownership transferred" message. Permissions come from the `role` prop. */}
           <ExecMembers
-            key={`${state.data.id}:${access.role}`}
+            key={state.data.id}
             clubId={state.data.id}
             clubName={state.data.name}
             role={access.role!}

@@ -83,8 +83,10 @@ export default function ExecMembers({
             key={member.userId}
             className="rounded-lg border border-gray-200 bg-white p-3"
           >
-            <p className="break-words font-semibold">{member.name}</p>
-            <p className="break-words text-sm text-gray-600">{member.role}</p>
+            <p className="wrap-break-word font-semibold">{member.name}</p>
+            <p className="wrap-break-word text-sm text-gray-600">
+              {member.role}
+            </p>
             {canManageMember(role, member.role) && (
               <div className="mt-2 flex flex-wrap items-center gap-3">
                 {role === "owner" && (
@@ -92,7 +94,7 @@ export default function ExecMembers({
                     Role for {member.name}
                     <select
                       value={member.role}
-                      disabled={busy || state.loading}
+                      disabled={busy || state.loading || state.refreshing}
                       className={inputClass}
                       onChange={(e) => {
                         const value = e.target.value as "admin" | "editor";
@@ -111,7 +113,7 @@ export default function ExecMembers({
                 )}
                 <button
                   type="button"
-                  disabled={busy || state.loading}
+                  disabled={busy || state.loading || state.refreshing}
                   className="min-h-11 text-red-700 underline"
                   onClick={() => {
                     if (
@@ -131,7 +133,7 @@ export default function ExecMembers({
       </ul>
       <form onSubmit={add} className="mt-5 space-y-3">
         <fieldset
-          disabled={busy || state.loading || !state.data}
+          disabled={busy || state.loading || state.refreshing || !state.data}
           className="min-w-0 space-y-3"
         >
           <legend className="font-semibold">Add an exec</legend>
@@ -209,7 +211,11 @@ export default function ExecMembers({
           <button
             type="submit"
             disabled={
-              busy || state.loading || !target || confirmation !== clubName
+              busy ||
+              state.loading ||
+              state.refreshing ||
+              !target ||
+              confirmation !== clubName
             }
             className="min-h-11 rounded-lg bg-red-700 px-4 py-2 font-semibold text-white disabled:opacity-40"
           >
