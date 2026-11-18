@@ -16,5 +16,5 @@ export const uploadsRouter = Router();
 // permissions (PATCH /api/clubs/:clubId, PATCH /api/events/:id, updating your profile).
 uploadsRouter.post("/", requireAuth, async (req, res) => {
   const { folder, contentType, size } = uploadRequestSchema.parse(req.body);
-  res.json(await presignUpload(folder, contentType, size));
+  res.json(await presignUpload(folder, contentType, size, req.user!.id));
 });

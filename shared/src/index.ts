@@ -201,11 +201,15 @@ export interface UploadResponse {
 
 // Accepts only keys in the exact shape POST /api/uploads makes for this folder, e.g.
 // "events/<uuid>.png". So a club can't use a key from another folder, or make one up.
+// Profile pictures also include the uploader's user id: "users/<userId>/<uuid>.png",
+// so the server can check that a picture is yours (see server/src/auth.ts).
 export const uploadKeySchema = (folder: UploadFolder) =>
   z
     .string()
     .regex(
-      new RegExp(`^${folder}/[0-9a-f-]{36}\\.(jpg|png|webp|gif)$`),
+      new RegExp(
+        `^${folder}/${folder === "users" ? "[A-Za-z0-9_-]{1,64}/" : ""}[0-9a-f-]{36}\\.(jpg|png|webp|gif)$`,
+      ),
       "Invalid image",
     );
 
