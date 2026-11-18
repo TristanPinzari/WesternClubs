@@ -190,7 +190,7 @@ Every file starts with a `WHAT` / `WITHOUT IT` comment explaining its purpose. J
 
 ### Demo accounts
 
-`npm run db:seed:demo` creates these fictional accounts. They all use the password in `DEMO_PASSWORD` (ask Tristan; it's never committed). It's safe to run again: it resets their profiles, follows, and RSVPs.
+`npm run db:seed:demo` creates these fictional accounts. They all use the password in `DEMO_PASSWORD` (ask Tristan; it's never committed). It's safe to run again: it resets their profiles, club roles, follows, and RSVPs to the seed values, so re-run it between demo rehearsals. Clubs and events created live during a rehearsal are not removed; delete those in `npm run db:studio` if needed.
 
 | Email                      | Who                             | Use it to show                                                     |
 | -------------------------- | ------------------------------- | ------------------------------------------------------------------ |

@@ -7,8 +7,9 @@
 // (or put DEMO_PASSWORD in server/.env). Every account uses that password. Never
 // commit it: these accounts also exist on the deployed site.
 //
-// Safe to run twice: existing accounts are reused, and profiles, roles, follows, and
-// RSVPs are set back to the values below.
+// Safe to run twice: existing accounts are reused, and their profiles, roles, follows,
+// and RSVPs are reset to exactly the values below (handy between demo rehearsals).
+// Clubs and events created live during a rehearsal are NOT removed.
 import type {
   AttendancePurpose,
   EventCategory,
@@ -213,6 +214,20 @@ try {
   const warnings: string[] = [];
   await db.transaction(async (tx) => {
     const now = new Date();
+
+    // Wipe the demo accounts' OWN activity first, so a re-run really resets it: follows
+    // and RSVPs made while rehearsing disappear. Only rows these six accounts created.
+    const demoIds = ACCOUNTS.map((account) => idOf(account.key));
+    const nonExecIds = ACCOUNTS.filter((account) => !account.owns).map(
+      (account) => idOf(account.key),
+    );
+    await tx.delete(clubFollow).where(inArray(clubFollow.userId, demoIds));
+    await tx.delete(userFollow).where(inArray(userFollow.followerId, demoIds));
+    await tx.delete(eventRsvp).where(inArray(eventRsvp.userId, demoIds));
+    // Demo students aren't execs anywhere in the seed. This also undoes a rehearsed
+    // ownership transfer to one of them (see the exec step below).
+    await tx.delete(clubMember).where(inArray(clubMember.userId, nonExecIds));
+
     for (const account of ACCOUNTS) {
       const userId = idOf(account.key);
 
@@ -234,21 +249,27 @@ try {
 
       if (account.owns) {
         const clubId = clubIdOf(account.owns);
-        // DO NOTHING with no target also covers the one-owner index: if someone else
-        // already owns this club, we leave them alone and warn instead.
-        await tx
-          .insert(clubMember)
-          .values({ clubId, userId, role: "owner" })
-          .onConflictDoNothing();
-        const [membership] = await tx
-          .select({ role: clubMember.role })
+        const [owner] = await tx
+          .select({ userId: clubMember.userId })
           .from(clubMember)
           .where(
-            and(eq(clubMember.clubId, clubId), eq(clubMember.userId, userId)),
+            and(eq(clubMember.clubId, clubId), eq(clubMember.role, "owner")),
           );
-        if (membership?.role !== "owner") {
+        if (!owner || owner.userId === userId) {
+          // No owner (e.g. it was transferred to a demo student, removed above) or
+          // already the exec: make sure the exec is the owner, even if they were
+          // demoted to admin during a rehearsal.
+          await tx
+            .insert(clubMember)
+            .values({ clubId, userId, role: "owner" })
+            .onConflictDoUpdate({
+              target: [clubMember.clubId, clubMember.userId],
+              set: { role: "owner" },
+            });
+        } else {
+          // A real (non-demo) user owns it. Never take a club away from a real owner.
           warnings.push(
-            `${account.owns} already has a different owner, so ${emailFor(account.key)} isn't its owner.`,
+            `${account.owns} is owned by a non-demo account, so ${emailFor(account.key)} isn't its owner.`,
           );
         }
       }
