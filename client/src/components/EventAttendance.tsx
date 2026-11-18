@@ -12,6 +12,7 @@ import type {
 import { ATTENDANCE_PURPOSES } from "@orbit/shared";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import Avatar from "./Avatar";
 import { authClient } from "../lib/auth-client";
 import {
   getAttendees,
@@ -379,24 +380,16 @@ function AttendeeList({
         <ul className="space-y-3">
           {attendees.map((a) => (
             <li key={a.userId} className="flex items-center gap-3">
-              {a.image ? (
-                <img
-                  src={a.image}
-                  alt=""
-                  className="h-10 w-10 shrink-0 rounded-full object-cover"
-                />
-              ) : (
-                <span
-                  aria-hidden="true"
-                  className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-violet-100 font-semibold text-violet-800"
-                >
-                  {a.name.charAt(0).toUpperCase()}
-                </span>
-              )}
+              <Avatar name={a.name} image={a.image} />
               <div className="min-w-0">
-                {/* TODO(Rokyo): link names to /profile/:userId once profiles exist. */}
+                {/* Names open the person's profile, where you can follow them. */}
                 <p className="truncate font-medium">
-                  {a.name}
+                  <Link
+                    to={`/profile/${a.userId}`}
+                    className="hover:text-violet-700 hover:underline"
+                  >
+                    {a.name}
+                  </Link>
                   {a.userId === currentUserId && (
                     <span className="font-normal text-gray-500"> (you)</span>
                   )}

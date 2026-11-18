@@ -111,7 +111,7 @@ The frontend shows the reason on the card ("From a club you follow", "People you
 | ✅     | GET          | `/api/events/:id/rsvp`      | Public    | `{ goingCount, interestedCount, mine }`. Counts include anonymous RSVPs; `mine` is `null` when signed out                                         |
 | ✅     | PUT          | `/api/events/:id/rsvp`      | Signed in | `{ status, showOnAttendeeList?, purpose?, lookingForBuddy? }`. Creates or updates. 400 if cancelled or ended                                      |
 | ✅     | DELETE       | `/api/events/:id/rsvp`      | Signed in | 204, even if you had no RSVP                                                                                                                      |
-| ✅     | GET          | `/api/events/:id/attendees` | Signed in | **Only** users with `showOnAttendeeList = true`. Public-profile filter: TODO (the `profile` table now exists)                                     |
+| ✅     | GET          | `/api/events/:id/attendees` | Signed in | **Only** users with `showOnAttendeeList = true` **and** a public profile (no profile row counts as public)                                        |
 | ⬜     | PUT / DELETE | `/api/events/:id/save`      | Signed in | Save or unsave                                                                                                                                    |
 | ✅     | GET          | `/api/me/events`            | Signed in | Dashboard: `{ upcoming, past }`, each item `{ event, rsvp }`. Upcoming soonest first, past most recent first. Saved events: TODO if Save is built |
 | ✅     | GET          | `/api/me/clubs`             | Signed in | `MyClub[]`: clubs I'm an exec of, with my `role`, A to Z                                                                                          |
@@ -126,6 +126,8 @@ The frontend shows the reason on the card ("From a club you follow", "People you
 | ------ | ------ | ----------------------- | --------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ✅     | GET    | `/api/profiles/:userId` | Signed in | `Profile`: name, picture, program, year, bio, interests, links, plus `isFollowing`. 404 if the profile isn't public (unless it's your own)                      |
 | ✅     | PUT    | `/api/me/profile`       | Signed in | `updateProfileSchema`. Send only changed fields; creates the profile on first save. Going private (`isPublic: false`) removes your followers. Returns `Profile` |
+
+**Types in `shared/src/index.ts`:** validate the `PUT` body with `updateProfileSchema` (interests only from `EVENT_CATEGORIES`, links only http(s) from `LINK_KINDS`, blank text becomes `null`). The response type is `Profile`. The profile pages use both.
 
 **Profile pictures** are stored in Better Auth's `user.image` column as the **full public URL**. Update it with `authClient.updateUser({ image })` after uploading (see Uploads). Club logos use `club.logoKey`, and event images use `event.imageKey`, which store the S3 key; the API turns those into URLs.
 

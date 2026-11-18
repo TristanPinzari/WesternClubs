@@ -61,7 +61,15 @@ export default function MyEventsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">My events</h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-bold">My events</h1>
+        <Link
+          to={`/profile/${session.user.id}`}
+          className="text-sm font-medium text-violet-700 underline"
+        >
+          My profile
+        </Link>
+      </div>
 
       {error && <p className="mt-4 text-red-600">{error}</p>}
       {!data && !error && <p className="mt-4 text-gray-600">Loading…</p>}

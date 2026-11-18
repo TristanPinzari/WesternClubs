@@ -9,11 +9,11 @@ import {
   type MyRsvp,
   type RsvpSummary,
 } from "@orbit/shared";
-import { and, asc, count, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq, isNull, or } from "drizzle-orm";
 import { Router, type Response } from "express";
 import { z } from "zod";
 import { db } from "../db";
-import { event, eventRsvp, user } from "../db/schema";
+import { event, eventRsvp, profile, user } from "../db/schema";
 import { requireAuth } from "../middleware";
 
 export const rsvpsRouter = Router();
@@ -127,8 +127,8 @@ rsvpsRouter.delete("/:id/rsvp", requireAuth, async (req, res) => {
 
 // GET /api/events/:id/attendees
 // Signed in only, so the list isn't visible to anyone on the internet.
-// PRIVACY: only people who left "Show me on the attendee list" on. Anonymous RSVPs are
-// filtered out HERE, in the query, so they never leave the server at all.
+// PRIVACY: only people who left "Show me on the attendee list" on AND whose profile is
+// public. Both are filtered out HERE, in the query, so they never leave the server.
 rsvpsRouter.get("/:id/attendees", requireAuth, async (req, res) => {
   const found = await findEvent(req.params.id, res);
   if (!found) return;
@@ -144,13 +144,13 @@ rsvpsRouter.get("/:id/attendees", requireAuth, async (req, res) => {
     })
     .from(eventRsvp)
     .innerJoin(user, eq(eventRsvp.userId, user.id))
+    // LEFT join: someone who never saved a profile has no row, and counts as public.
+    .leftJoin(profile, eq(profile.userId, user.id))
     .where(
       and(
         eq(eventRsvp.eventId, found.id),
         eq(eventRsvp.showOnAttendeeList, true),
-        // TODO(Rokyo): once Naksh adds the `profile` table, also hide people whose
-        //   profile isn't public: leftJoin profile and require isPublic to be true
-        //   (or no profile row yet, since isPublic defaults to true).
+        or(isNull(profile.isPublic), eq(profile.isPublic, true)),
       ),
     )
     // "going" sorts before "interested" (enum order), then earliest RSVP first.
