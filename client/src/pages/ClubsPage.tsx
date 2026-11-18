@@ -2,24 +2,24 @@
 //   EXAMPLE PAGE: fetches from the API and handles loading, error, and empty states.
 // WITHOUT IT: The Clubs tab would show nothing, and the team would lose its working
 //   reference for how a page talks to the API.
-import type { ClubSummary, Paginated } from "@orbit/shared";
+import type { ClubSummary } from "@orbit/shared";
 import { useEffect, useState } from "react";
-import { apiGet } from "../lib/api";
+import { Link } from "react-router";
+import { listClubs } from "../lib/clubs";
+import { useDebouncedValue } from "../hooks/useDebouncedValue";
 
 export default function ClubsPage() {
   const [search, setSearch] = useState("");
+  const debouncedSearch = useDebouncedValue(search);
   const [clubs, setClubs] = useState<ClubSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Re-runs whenever `search` changes.
   useEffect(() => {
-    const params = new URLSearchParams();
-    if (search.trim()) params.set("q", search.trim());
-
     let ignore = false; // avoids showing a stale response if the user keeps typing
     setLoading(true);
-    apiGet<Paginated<ClubSummary>>(`/clubs?${params}`)
+    listClubs(debouncedSearch)
       .then((data) => {
         if (!ignore) {
           setClubs(data.items);
@@ -32,13 +32,25 @@ export default function ClubsPage() {
     return () => {
       ignore = true;
     };
-  }, [search]);
+  }, [debouncedSearch]);
 
   return (
     <div>
       <h1 className="text-2xl font-bold">Clubs</h1>
+      <div className="mt-3 flex flex-wrap gap-4 text-violet-700 underline">
+        <Link to="/clubs/new" className="inline-flex min-h-11 items-center">
+          Create a club
+        </Link>
+        <Link to="/me/clubs" className="inline-flex min-h-11 items-center">
+          My clubs
+        </Link>
+      </div>
 
+      <label htmlFor="club-search" className="sr-only">
+        Search clubs
+      </label>
       <input
+        id="club-search"
         type="search"
         placeholder="Search clubs"
         value={search}
@@ -57,7 +69,19 @@ export default function ClubsPage() {
             key={club.id}
             className="rounded-xl border border-gray-200 bg-white p-4"
           >
-            <h2 className="font-semibold">{club.name}</h2>
+            <Link
+              to={`/clubs/${club.slug}`}
+              className="flex min-h-11 items-center gap-3 font-semibold text-violet-700 underline"
+            >
+              {club.logoUrl && (
+                <img
+                  src={club.logoUrl}
+                  alt=""
+                  className="h-10 w-10 rounded-full object-cover"
+                />
+              )}
+              <h2>{club.name}</h2>
+            </Link>
             <p className="mt-1 text-sm text-gray-600">{club.description}</p>
           </li>
         ))}
