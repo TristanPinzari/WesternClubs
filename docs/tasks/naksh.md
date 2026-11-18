@@ -13,39 +13,39 @@ You own the database schema, the API, and the security of Orbit: who is allowed 
 
 ## 1. The `event` table and `GET /api/events` (do this first, because Aryan and Rokyo need it)
 
-- [ ] Add the `event` table to `schema.ts` using the design notes in that file, then run `npm run db:push`
-- [ ] Add `eventListQuerySchema` and an `EventSummary` type to `shared/src/index.ts`
-- [ ] Create `server/src/routes/events.ts` with `GET /api/events` and `GET /api/events/:id`, copying the pattern in `clubs.ts`
+- [x] Add the `event` table to `schema.ts` using the design notes in that file, then run `npm run db:push`
+- [x] Add `eventListQuerySchema` and an `EventSummary` type to `shared/src/index.ts`
+- [x] Create `server/src/routes/events.ts` with `GET /api/events` and `GET /api/events/:id`, copying the pattern in `clubs.ts`
   - Only return upcoming, not-cancelled events, soonest first
   - Join with `club` so each event includes its club's name and slug
-- [ ] Mount the router in `server/src/index.ts`
-- [ ] Tell Aryan and Rokyo when it's merged
+- [x] Mount the router in `server/src/index.ts`
+- [x] Tell Aryan and Rokyo when it's merged
 
 ## 2. Restrict sign-up to `@uwo.ca`
 
-- [ ] Follow the TODO in `server/src/auth.ts`
-- [ ] Test it: signing up with a gmail address should fail, and a `@uwo.ca` address should work
+- [x] Follow the TODO in `server/src/auth.ts`
+- [x] Test it: signing up with a gmail address should fail, and a `@uwo.ca` address should work
 
 ## 3. Club creation and permissions (the core security work)
 
-- [ ] `POST /api/clubs`: the creator becomes the owner, inside a transaction
-- [ ] Write the `requireClubRole(...roles)` middleware (see the TODO in `middleware.ts`)
-- [ ] `POST /api/clubs/:clubId/events`: only owners, admins, and editors
-- [ ] Member management: add, change role, remove
-- [ ] Transfer ownership
-- [ ] Enforce **every** rule in the "Club permissions" section of `docs/API.md`
+- [x] `POST /api/clubs`: the creator becomes the owner, inside a transaction
+- [x] Write the `requireClubRole(...roles)` middleware (see the TODO in `middleware.ts`)
+- [x] `POST /api/clubs/:clubId/events`: only owners, admins, and editors
+- [x] Member management: add, change role, remove
+- [x] Transfer ownership
+- [x] Enforce **every** rule in the "Club permissions" section of `docs/API.md`
 
 **Think like an attacker.** For each endpoint, ask: what happens if someone who isn't allowed calls it directly, without using our UI? Try it with curl or Postman. Can an editor promote themselves? Can someone edit another club's event by changing the `:clubId` in the URL?
 
 ## 4. Remaining tables
 
-- [ ] `profile`, `club_follow`, `connection`: designs are in `schema.ts`
-- [ ] The `TODO(advanced)` items: the one-owner-per-club index, the duplicate-connection index, and the event indexes. Research these or ask your AI assistant to _explain_ them, not just write them.
+- [x] `profile`, `club_follow`, `connection`: designs are in `schema.ts` _(connection cancelled Nov 16; built `user_follow` instead)_
+- [x] The `TODO(advanced)` items: the one-owner-per-club index, the duplicate-connection index, and the event indexes. Research these or ask your AI assistant to _explain_ them, not just write them. _(One owner: partial unique index. Duplicate connections: replaced by `user_follow`'s primary key. Event indexes: on `startsAt` and `clubId`.)_
 
 ## 5. Stretch goals
 
-- [ ] Image uploads (`server/src/s3.ts` TODO plus `POST /api/uploads`). Only allow image content types.
-- [ ] Profile and connection endpoints
+- [x] Image uploads (`server/src/s3.ts` TODO plus `POST /api/uploads`). Only allow image content types.
+- [x] Profile and connection endpoints _(following instead of connections)_
 
 ## Tips
 
@@ -66,37 +66,37 @@ Do these in order. Each one unblocks a teammate, noted in brackets.
 
 ### A. Finish PR #17
 
-- [ ] Slug suffix (`western-ai-2`) instead of the 409, as requested in the review
+- [x] Slug suffix (`western-ai-2`) instead of the 409, as requested in the review
 
 ### B. Creating and editing events [unblocks Aryan's event forms]
 
-- [ ] `createEventSchema` in `shared/src/index.ts` (use the `event` table columns)
-- [ ] `POST /api/clubs/:clubId/events`: owners, admins, editors (`requireClubRole`)
-- [ ] `PATCH /api/events/:id` and `POST /api/events/:id/cancel`. **Security:** look up the event's own `clubId` in the database and check the role in _that_ club. Never trust a `clubId` from the request body.
+- [x] `createEventSchema` in `shared/src/index.ts` (use the `event` table columns)
+- [x] `POST /api/clubs/:clubId/events`: owners, admins, editors (`requireClubRole`)
+- [x] `PATCH /api/events/:id` and `POST /api/events/:id/cancel`. **Security:** look up the event's own `clubId` in the database and check the role in _that_ club. Never trust a `clubId` from the request body.
 
 ### C. Image uploads [unblocks Aryan's image upload component and Rokyo's profile pictures]
 
-- [ ] `presignUpload()` in `server/src/s3.ts` (the TODO there)
-- [ ] `POST /api/uploads`: `folder` is `clubs`, `events`, or `users`, and image content types only. Returns `{ key, uploadUrl, publicUrl }`.
-- [ ] TODO(advanced): a size limit. A presigned PUT can't limit file size; look up S3 _presigned POST_ with `content-length-range`, or accept the risk for the hackathon and note it.
+- [x] `presignUpload()` in `server/src/s3.ts` (the TODO there)
+- [x] `POST /api/uploads`: `folder` is `clubs`, `events`, or `users`, and image content types only. Returns `{ key, uploadUrl, publicUrl }`.
+- [x] TODO(advanced): a size limit. A presigned PUT can't limit file size; look up S3 _presigned POST_ with `content-length-range`, or accept the risk for the hackathon and note it. _(Done with the presigned PUT: the size is signed as `Content-Length`, so S3 rejects a bigger file.)_
 
 ### D. Editing and deleting clubs [unblocks Aryan's club settings page]
 
-- [ ] `PATCH /api/clubs/:clubId`: owner and admin. Name, description, `logoKey`, links. **Don't change the slug.** Check that `logoKey` starts with `clubs/`.
-- [ ] `DELETE /api/clubs/:clubId`: owner only
-- [ ] `GET /api/me/clubs`: clubs I'm an exec of, with my role. Aryan needs it to decide when to show the "Post event" and "Settings" buttons.
-- [ ] Then section 3's member management and ownership transfer, still as planned
+- [x] `PATCH /api/clubs/:clubId`: owner and admin. Name, description, `logoKey`, links. **Don't change the slug.** Check that `logoKey` starts with `clubs/`.
+- [x] `DELETE /api/clubs/:clubId`: owner only
+- [x] `GET /api/me/clubs`: clubs I'm an exec of, with my role. Aryan needs it to decide when to show the "Post event" and "Settings" buttons.
+- [x] Then section 3's member management and ownership transfer, still as planned
 
 ### E. Following [unblocks Aryan's follow button and feed, and Rokyo's profiles]
 
-- [ ] `club_follow` table, plus `PUT` / `DELETE /api/clubs/:clubId/follow`
-- [ ] `user_follow` table (design in `schema.ts`), plus `PUT` / `DELETE /api/users/:userId/follow`. Return 400 if someone tries to follow themselves, and 404 if the profile isn't public.
-- [ ] `GET /api/me/following`: `{ clubs, users }`
+- [x] `club_follow` table, plus `PUT` / `DELETE /api/clubs/:clubId/follow`
+- [x] `user_follow` table (design in `schema.ts`), plus `PUT` / `DELETE /api/users/:userId/follow`. Return 400 if someone tries to follow themselves, and 404 if the profile isn't public.
+- [x] `GET /api/me/following`: `{ clubs, users }`
 
 ### F. Profiles [unblocks Rokyo's profile pages]
 
-- [ ] `profile` table (design in `schema.ts`). Interests must be values from `EVENT_CATEGORIES`; validate with Zod.
-- [ ] `GET /api/profiles/:userId` (includes `isFollowing`) and `PUT /api/me/profile`
-- [ ] Profile pictures live in `user.image` as a full URL (see `docs/API.md`). Nothing to build for that beyond uploads.
+- [x] `profile` table (design in `schema.ts`). Interests must be values from `EVENT_CATEGORIES`; validate with Zod.
+- [x] `GET /api/profiles/:userId` (includes `isFollowing`) and `PUT /api/me/profile`
+- [x] Profile pictures live in `user.image` as a full URL (see `docs/API.md`). Nothing to build for that beyond uploads.
 
 **Think like an attacker, again:** can someone follow a private profile by calling the API directly? Can an editor change a club's logo through `PATCH`? Can someone set their club's `logoKey` to another club's image?

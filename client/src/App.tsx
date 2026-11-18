@@ -2,9 +2,12 @@
 //   routes (which URL shows which page). Add new pages to <Routes> here.
 // WITHOUT IT: There'd be no navigation, and no URL would show any page.
 import { NavLink, Route, Routes } from "react-router";
+import UserMenu from "./components/UserMenu";
 import ClubsPage from "./pages/ClubsPage";
 import HomePage from "./pages/HomePage";
 import EventDetailPage from "./pages/EventDetailPage";
+import SignInPage from "./pages/SignInPage";
+import SignUpPage from "./pages/SignUpPage";
 
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
   isActive ? "font-semibold text-violet-700" : "text-gray-600";
@@ -21,6 +24,7 @@ export default function App() {
           <NavLink to="/clubs" className={navLinkClass}>
             Clubs
           </NavLink>
+          <UserMenu />
         </nav>
       </header>
 
@@ -30,8 +34,10 @@ export default function App() {
           <Route path="/clubs" element={<ClubsPage />} />
           {/* :id becomes useParams().id on the detail page; cards link here. */}
           <Route path="/events/:id" element={<EventDetailPage />} />
+          <Route path="/sign-in" element={<SignInPage />} />
+          <Route path="/sign-up" element={<SignUpPage />} />
           {/* TODO: add pages as you build them, e.g.
-              /clubs/:slug, /sign-in, /sign-up, /me (dashboard), /profile/:id */}
+              /clubs/:slug, /me (dashboard), /profile/:id */}
         </Routes>
       </main>
     </div>

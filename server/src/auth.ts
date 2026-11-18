@@ -2,13 +2,34 @@
 //   hashing, and session cookies for us. Docs: https://www.better-auth.com/docs
 // WITHOUT IT: Nobody could create an account or sign in, and the server couldn't tell
 //   who is making a request.
-import { EMAIL_DOMAIN_ERROR, isAllowedEmail } from "@orbit/shared";
+import {
+  EMAIL_DOMAIN_ERROR,
+  isAllowedEmail,
+  uploadKeySchema,
+} from "@orbit/shared";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { APIError } from "better-auth/api";
 import { db } from "./db";
 import * as schema from "./db/schema";
 import { env } from "./env";
+import { MEDIA_BASE_URL } from "./s3";
+
+// Profile pictures (user.image) must be images uploaded through POST /api/uploads to
+// the users/ folder. Without this check, someone could call updateUser directly and set
+// their picture to ANY web address: an offensive image, or a "tracking pixel" on their
+// own server that records the IP address of everyone who views their profile.
+// null/undefined (no picture) is fine.
+function isAllowedProfileImage(image: unknown): boolean {
+  if (image === null || image === undefined) return true;
+  return (
+    typeof image === "string" &&
+    image.startsWith(MEDIA_BASE_URL) &&
+    uploadKeySchema("users").safeParse(image.slice(MEDIA_BASE_URL.length))
+      .success
+  );
+}
+const PROFILE_IMAGE_ERROR = "Profile pictures must be uploaded through Orbit.";
 
 // Minimal working setup: email + password sign-up and sign-in.
 export const auth = betterAuth({
@@ -28,6 +49,9 @@ export const auth = betterAuth({
           if (!isAllowedEmail(user.email)) {
             throw new APIError("BAD_REQUEST", { message: EMAIL_DOMAIN_ERROR });
           }
+          if (!isAllowedProfileImage(user.image)) {
+            throw new APIError("BAD_REQUEST", { message: PROFILE_IMAGE_ERROR });
+          }
         },
       },
       // Email changes are off today, but if someone turns them on later, this stops
@@ -36,6 +60,9 @@ export const auth = betterAuth({
         before: async (data) => {
           if (typeof data.email === "string" && !isAllowedEmail(data.email)) {
             throw new APIError("BAD_REQUEST", { message: EMAIL_DOMAIN_ERROR });
+          }
+          if (!isAllowedProfileImage(data.image)) {
+            throw new APIError("BAD_REQUEST", { message: PROFILE_IMAGE_ERROR });
           }
         },
       },
