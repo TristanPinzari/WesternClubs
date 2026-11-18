@@ -100,3 +100,33 @@ Do these in order. Each one unblocks a teammate, noted in brackets.
 - [x] Profile pictures live in `user.image` as a full URL (see `docs/API.md`). Nothing to build for that beyond uploads.
 
 **Think like an attacker, again:** can someone follow a private profile by calling the API directly? Can an editor change a club's logo through `PATCH`? Can someone set their club's `logoKey` to another club's image?
+
+---
+
+## Final tasks (added Nov 18): do these in order
+
+All your planned backend work is done. These are new, and the demo needs the first two.
+
+### 1. ⭐ Demo accounts and social data (moved over from Aryan's task H)
+
+Without this, the feed and attendee lists are empty during the demo.
+
+- [ ] A seed step (in `server/src/db/seed.ts`, or a separate `npm run db:seed:demo`) that creates:
+  - **One club exec**, the owner of one of the demo clubs (a `club_member` row with role `owner`)
+  - **4–5 students** with profiles and interests. Make at least one profile **private**, to show it stays off attendee lists.
+  - **Follows:** students following clubs and each other
+  - **RSVPs** on upcoming demo events, mostly public, plus at least one **anonymous**
+- [ ] Create users through Better Auth (`auth.api.signUpEmail`) so passwords are hashed properly. Make it **safe to run twice**: skip accounts that already exist.
+- [ ] Read the demo password from an env var (e.g. `DEMO_PASSWORD`). **Don't commit it.** These accounts will exist on the deployed site.
+- [ ] Write the demo logins (emails only) in the README or the pitch notes, so whoever presents knows which account to use.
+
+### 2. Help Tristan deploy
+
+- [ ] The Railway service: start command `npm run start -w server`, and env vars copied from `server/.env`, with a **new** `BETTER_AUTH_SECRET` for production and `APP_URL` set to the Vercel URL.
+- [ ] Production database: `npm run db:push`, then the seeds, run with production's `DATABASE_URL`.
+- [ ] A smoke test on the deployed site: sign up, create a club, post an event, upload an image, RSVP.
+
+### 3. Optional, if there's time
+
+- [ ] **Non-Latin club names:** a name like "한국 학생회" gets a 400 because the slug comes out empty. Fall back to a random slug (e.g. `club-<short id>`).
+- [ ] **Copied profile pictures:** put the user's id in upload keys (`users/<userId>/...`) and check it when saving `user.image`, so nobody can use someone else's picture.

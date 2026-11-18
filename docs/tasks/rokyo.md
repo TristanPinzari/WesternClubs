@@ -32,7 +32,7 @@ You'll build one complete feature through every layer: the database table, the A
 
 ## 2. The RSVP table (wait until Naksh has added the `event` table)
 
-- [ ] Add `event_rsvp` and `saved_event` to `schema.ts` using the design notes in that file, then run `npm run db:push`
+- [x] Add `event_rsvp` and `saved_event` to `schema.ts` using the design notes in that file, then run `npm run db:push` _(`event_rsvp` done; `saved_event` skipped because Save isn't planned)_
 - [ ] Ask yourself: why is the primary key `(eventId, userId)`? What would go wrong without it?
 
 ## 3. The RSVP API
@@ -79,16 +79,58 @@ Then, after sections 0–6:
 - [ ] **Profile picture:** reuse Aryan's `ImageUpload` component, then save the `publicUrl` with `authClient.updateUser({ image })`
 - [x] `/profile/:userId`: someone's public profile, with a **Follow** button
 - [x] Make names on the attendee list link to profiles
-- [ ] Show the user's picture in the header menu
+- [x] Show the user's picture in the header menu
 
 ### B. Following people [needs Naksh's task E]
 
-- [ ] The Follow / Unfollow button on profiles (`PUT` / `DELETE /api/users/:userId/follow`)
+- [x] The Follow / Unfollow button on profiles (`PUT` / `DELETE /api/users/:userId/follow`)
 - [ ] A "Following" page (`GET /api/me/following`) listing the clubs and people I follow
-- [ ] **Don't show follower counts or follower lists anywhere.** That's a team decision.
+- [x] **Don't show follower counts or follower lists anywhere.** That's a team decision.
 
 ### C. Onboarding [needs profiles and club follows]
 
 - [ ] Right after sign-up: one screen to **pick your interests** and **follow a few clubs**, then go to the feed. Without it, a brand-new user's "For you" feed would be empty.
 
 Until Naksh's endpoints land, you can build these pages with fake data, the way Aryan did for the event feed.
+
+---
+
+## Final tasks (added Nov 18): do these in order
+
+All the backend you need is merged, so nothing here waits on anyone else.
+
+### 1. ⭐ Mount the RSVP panel (do this first: the demo depends on it)
+
+Right now nobody can RSVP in the app: `EventAttendance` exists, but the event page still shows a placeholder.
+
+- [ ] In `client/src/pages/EventDetailPage.tsx`, replace the `TODO(Rokyo)` placeholder (around line 197) with:
+  ```tsx
+  <EventAttendance key={event.id} eventId={event.id} closed={...} />
+  ```
+  - `key={event.id}` makes React start fresh when you go from one event to another, so the old event's form never carries over.
+  - `closed` should be true if the event is cancelled or has already ended.
+- [ ] Test it: RSVP Going, switch to Interested, RSVP anonymously from a second account, and check the attendee list and counts update.
+
+### 2. Onboarding after sign-up
+
+- [ ] A `/welcome` page: pick interests (the same chips as the profile page; save with `PUT /api/me/profile` sending just `{ interests }`), then follow a few clubs (list from `GET /api/clubs`, Follow buttons like the club page's), then a "Done" button that goes to `/`.
+- [ ] Send new users there from `SignUpPage.tsx` (the `TODO(Rokyo)` there) instead of `/`.
+- [ ] Without this, a brand-new user's "For you" feed is empty during the demo.
+
+### 3. Profile picture upload
+
+- [ ] On `/me/profile`, replace the "coming soon" text (the `TODO(Rokyo)` on the edit page) with Aryan's `ImageUpload` component, using the `users` folder.
+- [ ] After it uploads, save the picture with `authClient.updateUser({ image: publicUrl })`. The header and profile already show `user.image`.
+
+### 4. "Following" page
+
+- [ ] `/me/following`: the clubs and people you follow (`GET /api/me/following`), each linking to its page, with an Unfollow button. Link to it from the header menu or `/me`.
+
+### 5. Clean-ups
+
+- [ ] `lib/profiles.ts`: use `categoryLabels` from `lib/eventDisplay.ts` instead of `interestLabels` (the `TODO(Rokyo)` there)
+- [ ] `MyEventsPage.tsx`: use `formatEventDate` / `formatEventTime` from `lib/eventDisplay.ts` (the `TODO(Rokyo)` there)
+
+### Not planned
+
+- **Save** (bookmarks) is on hold. "Interested" covers it for the demo, so skip the Save items above unless Tristan says otherwise.
