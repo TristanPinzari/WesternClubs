@@ -155,3 +155,29 @@ Temporary Better Auth test accounts were cleaned up and do not satisfy this task
 ### Later polish
 
 - [ ] Keep search, category, and page in the URL (`useSearchParams`) so they survive going back from an event
+
+---
+
+## Final tasks (added Nov 18): do these in order
+
+Rokyo's RSVP table and profile privacy are merged, so the feed can be finished. **Task H (demo accounts) has moved to Naksh**, so you can focus on the feed.
+
+### 1. Feed rule 2: "People you follow are going"
+
+- [ ] In `server/src/queries/feed.ts`, add a score-2 group between followed clubs (3) and interests (1): the event has an RSVP from someone the user follows (`user_follow.follower_id` = the user, `followee_id` = the RSVP's `user_id`).
+- [ ] **Privacy, both rules:**
+  - Only count RSVPs with `show_on_attendee_list = true`, so anonymous RSVPs are never revealed.
+  - Only count people whose profile is public. Left-join `profile` and allow `is_public IS NULL OR is_public = true`, the same rule as `routes/rsvps.ts`.
+- [ ] Return `reason: "followed_user"`, and show "People you follow are going" on the card. **Never** say _which_ people.
+- [ ] Update the feed row in `docs/API.md` to ✅, and remove the "waits for Rokyo's RSVP table" note.
+- [ ] Test with two accounts: A follows B, B RSVPs publicly, so the event moves up A's feed. Then B switches to anonymous, or makes their profile private, and the event drops back down.
+
+### 2. Keep filters in the URL (was "Later polish")
+
+- [ ] Search, category, page, and the For you / All tab in the URL (`useSearchParams`), so going back from an event keeps your place, and filtered feeds can be shared.
+
+### 3. Demo prep
+
+- [ ] With Tristan: plan the part of the demo that shows the feed. Which account to sign in as, and which events should appear first, and why.
+
+The "Recommended for you" stretch goal in section 5 is covered by the feed, so there's nothing separate to build.

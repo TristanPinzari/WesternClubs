@@ -7,11 +7,11 @@
 
 ## Setup (before the team starts)
 
-- [ ] Commit and push the skeleton
-- [ ] Invite everyone to the GitHub repo
-- [ ] Invite everyone to the Neon project, and have each person create their own branch
-- [ ] Privately send the `orbit-server` AWS key to whoever needs uploads (Naksh)
-- [ ] Walk everyone through README → Getting Started until the Clubs tab works on their machine
+- [x] Commit and push the skeleton
+- [x] Invite everyone to the GitHub repo
+- [x] Invite everyone to the Neon project, and have each person create their own branch
+- [x] Privately send the `orbit-server` AWS key to whoever needs uploads (Naksh)
+- [x] Walk everyone through README → Getting Started until the Clubs tab works on their machine
 
 ## Order of work (dependencies)
 
@@ -68,4 +68,40 @@ Watch Naksh's queue the most. Everyone's new work depends on it, so review Naksh
 
 - [ ] Slides, the demo script, and who presents
 - [ ] The demo story: an exec creates a club and posts an event, then a student finds it in "For you", RSVPs, and sees who's going
-- [ ] With Aryan: demo accounts (one exec, a few students) so the social parts aren't empty
+- [ ] With Aryan: demo accounts (one exec, a few students) so the social parts aren't empty _(moved to Naksh on Nov 18)_
+
+---
+
+## Final tasks (added Nov 18)
+
+All PRs through #22 are merged. What's left, in priority order across the team:
+
+| #   | Task                                                     | Owner              | Why it matters                                      |
+| --- | -------------------------------------------------------- | ------------------ | --------------------------------------------------- |
+| 1   | Mount the RSVP panel on the event page                   | Rokyo              | **Blocks the demo:** nobody can RSVP in the app yet |
+| 2   | Demo accounts and social data                            | Naksh              | The feed and attendee lists are empty without it    |
+| 3   | Deploy (below)                                           | Tristan + Naksh    | The demo runs on the real site                      |
+| 4   | Feed rule 2: "People you follow are going"               | Aryan              | The headline social feature of the feed             |
+| 5   | Onboarding after sign-up                                 | Rokyo              | A new user's feed is empty without it               |
+| 6   | Profile pictures, the Following page, filters in the URL | Rokyo, Aryan       | Polish                                              |
+| —   | Pitch prep                                               | Tristan + everyone | In parallel the whole time                          |
+
+If time runs short, cut from the bottom.
+
+### Deploy
+
+- [ ] **Railway (backend):** a service from the repo root, start command `npm run start -w server`. Copy the env vars from `server/.env`, but use a **new** `BETTER_AUTH_SECRET`, production's `DATABASE_URL` (Neon's `main` branch), and `APP_URL` = the Vercel URL.
+- [ ] **Vercel (frontend):** root directory `client`. Replace `REPLACE-WITH-RAILWAY-URL` in `client/vercel.json` with the Railway URL, then redeploy.
+- [ ] **S3:** add the Vercel URL to the bucket's CORS `AllowedOrigins`, or image uploads fail in production.
+- [ ] **Production database:** `npm run db:push`, `npm run db:seed`, then Naksh's demo seed, all with production's `DATABASE_URL`.
+- [ ] **Smoke test** on a phone: sign up, create a club, post an event, upload an image, RSVP, check the attendee list and "For you".
+
+### Decisions to make
+
+- [ ] **Save (bookmarks):** never built. Recommendation: drop it officially (remove it from `docs/API.md` and the README), since "Interested" covers it.
+
+### Before presenting
+
+- [ ] Full dry run of the demo on the deployed site, on a phone
+- [ ] Have the demo logins written down (from Naksh's seed)
+- [ ] Have a backup plan if the venue Wi-Fi fails, e.g. a screen recording of the demo
