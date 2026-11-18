@@ -63,6 +63,7 @@ Rules worth enforcing:
 ### Club URLs (slugs)
 
 - The slug is created from the name when the club is created. If it's taken, add a number: `western-ai`, `western-ai-2`, `western-ai-3`.
+- A name with no Latin letters or numbers ("한국 학생회") gets a random slug like `club-3fa9c2`. A name with no letters or numbers at all ("!!!") is a 400.
 - **Renaming a club (`PATCH`) changes only `name`. The slug stays the same**, so links people have shared (Instagram bios, posters, group chats) keep working.
 - Letting owners change the slug themselves is a possible future feature, not part of the hackathon.
 
@@ -157,6 +158,8 @@ Now **required**, not a stretch goal: club logos, event images, and profile pict
 Upload flow: (1) ask `POST /api/uploads` for an upload URL, sending the file's `type` and `size`, (2) the browser `PUT`s the file directly to `uploadUrl` within 5 minutes, with the **same `Content-Type` header** (S3 rejects a different type or size), (3) save the result: `key` for clubs and events (via their `PATCH` endpoints), or `publicUrl` for your profile picture (via `authClient.updateUser`).
 
 Security: when a `PATCH` saves a `logoKey` or `imageKey`, check it starts with the right folder (`clubs/` or `events/`). Otherwise someone could point their club's logo at any file in the bucket. (Done: `uploadKeySchema` in shared. Profile pictures are checked the same way in `server/src/auth.ts`, so `user.image` can only be an Orbit upload.)
+
+Profile pictures are uploaded to `users/<your user id>/...`, and saving `user.image` only accepts a picture from **your own** folder. So nobody can copy someone else's picture URL to pose as them. A new account can't be created with a picture; set it after signing up.
 
 ## Privacy rules (summary)
 

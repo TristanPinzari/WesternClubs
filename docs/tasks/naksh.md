@@ -128,5 +128,5 @@ Without this, the feed and attendee lists are empty during the demo.
 
 ### 3. Optional, if there's time
 
-- [ ] **Non-Latin club names:** a name like "한국 학생회" gets a 400 because the slug comes out empty. Fall back to a random slug (e.g. `club-<short id>`).
-- [ ] **Copied profile pictures:** put the user's id in upload keys (`users/<userId>/...`) and check it when saving `user.image`, so nobody can use someone else's picture.
+- [x] **Non-Latin club names:** a name like "한국 학생회" gets a 400 because the slug comes out empty. Fall back to a random slug (e.g. `club-<short id>`).
+- [x] **Copied profile pictures:** put the user's id in upload keys (`users/<userId>/...`) and check it when saving `user.image`, so nobody can use someone else's picture.

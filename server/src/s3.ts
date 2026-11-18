@@ -49,9 +49,13 @@ export async function presignUpload(
   folder: UploadFolder,
   contentType: ImageContentType,
   size: number,
+  userId: string,
 ): Promise<UploadResponse> {
   // A random name, so uploads can never overwrite each other (or someone else's).
-  const key = `${folder}/${randomUUID()}.${EXTENSIONS[contentType]}`;
+  // Profile pictures go in a folder named after the uploader, so nobody can save
+  // someone else's picture as their own (checked in auth.ts).
+  const prefix = folder === "users" ? `users/${userId}` : folder;
+  const key = `${prefix}/${randomUUID()}.${EXTENSIONS[contentType]}`;
   const uploadUrl = await getSignedUrl(
     s3,
     new PutObjectCommand({
