@@ -2,7 +2,7 @@
 //   or Sign in / Sign up links when nobody is signed in.
 // WITHOUT IT: There'd be no way to reach the auth pages from the nav, and no sign that
 //   you're signed in (or as whom).
-import { Link, useNavigate } from "react-router";
+import { Link, NavLink, useNavigate } from "react-router";
 import { authClient } from "../lib/auth-client";
 
 export default function UserMenu() {
@@ -47,7 +47,16 @@ export default function UserMenu() {
   return (
     <div className="ml-auto flex min-w-0 items-center gap-3 text-sm">
       {/* TODO(Rokyo): show the profile picture (session.user.image) once uploads exist. */}
-      <span className="truncate font-medium">{session.user.name}</span>
+      {/* Your name opens your dashboard: the events you're going to. */}
+      <NavLink
+        to="/me"
+        end
+        className={({ isActive }) =>
+          `truncate font-medium ${isActive ? "text-violet-700" : ""}`
+        }
+      >
+        {session.user.name}
+      </NavLink>
       <button
         type="button"
         onClick={handleSignOut}

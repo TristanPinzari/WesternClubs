@@ -106,15 +106,15 @@ The frontend shows the reason on the card ("From a club you follow", "People you
 
 ## RSVPs, saves, and the dashboard
 
-| Status | Method       | Path                        | Who       | Notes                                                                                                         |
-| ------ | ------------ | --------------------------- | --------- | ------------------------------------------------------------------------------------------------------------- |
-| ✅     | GET          | `/api/events/:id/rsvp`      | Public    | `{ goingCount, interestedCount, mine }`. Counts include anonymous RSVPs; `mine` is `null` when signed out     |
-| ✅     | PUT          | `/api/events/:id/rsvp`      | Signed in | `{ status, showOnAttendeeList?, purpose?, lookingForBuddy? }`. Creates or updates. 400 if cancelled or ended  |
-| ✅     | DELETE       | `/api/events/:id/rsvp`      | Signed in | 204, even if you had no RSVP                                                                                  |
-| ✅     | GET          | `/api/events/:id/attendees` | Signed in | **Only** users with `showOnAttendeeList = true`. Public-profile filter: TODO (the `profile` table now exists) |
-| ⬜     | PUT / DELETE | `/api/events/:id/save`      | Signed in | Save or unsave                                                                                                |
-| ⬜     | GET          | `/api/me/events`            | Signed in | Dashboard: my RSVPs and saved events, upcoming first                                                          |
-| ✅     | GET          | `/api/me/clubs`             | Signed in | `MyClub[]`: clubs I'm an exec of, with my `role`, A to Z                                                      |
+| Status | Method       | Path                        | Who       | Notes                                                                                                                                             |
+| ------ | ------------ | --------------------------- | --------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ✅     | GET          | `/api/events/:id/rsvp`      | Public    | `{ goingCount, interestedCount, mine }`. Counts include anonymous RSVPs; `mine` is `null` when signed out                                         |
+| ✅     | PUT          | `/api/events/:id/rsvp`      | Signed in | `{ status, showOnAttendeeList?, purpose?, lookingForBuddy? }`. Creates or updates. 400 if cancelled or ended                                      |
+| ✅     | DELETE       | `/api/events/:id/rsvp`      | Signed in | 204, even if you had no RSVP                                                                                                                      |
+| ✅     | GET          | `/api/events/:id/attendees` | Signed in | **Only** users with `showOnAttendeeList = true`. Public-profile filter: TODO (the `profile` table now exists)                                     |
+| ⬜     | PUT / DELETE | `/api/events/:id/save`      | Signed in | Save or unsave                                                                                                                                    |
+| ✅     | GET          | `/api/me/events`            | Signed in | Dashboard: `{ upcoming, past }`, each item `{ event, rsvp }`. Upcoming soonest first, past most recent first. Saved events: TODO if Save is built |
+| ✅     | GET          | `/api/me/clubs`             | Signed in | `MyClub[]`: clubs I'm an exec of, with my `role`, A to Z                                                                                          |
 
 **RSVPs are visible by default, with an option to RSVP anonymously.** `showOnAttendeeList` defaults to `true`. In the UI, show a toggle labelled "Show me on the attendee list" **inside the RSVP step itself, switched on**, so students see it every time and can turn it off before confirming. Students with a non-public profile never appear, whatever the toggle says.
 

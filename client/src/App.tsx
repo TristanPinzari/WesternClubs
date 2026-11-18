@@ -6,6 +6,7 @@ import UserMenu from "./components/UserMenu";
 import ClubsPage from "./pages/ClubsPage";
 import HomePage from "./pages/HomePage";
 import EventDetailPage from "./pages/EventDetailPage";
+import MyEventsPage from "./pages/MyEventsPage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
 import ClubDetailPage from "./pages/ClubDetailPage";
@@ -52,8 +53,9 @@ export default function App() {
           <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />
+          <Route path="/me" element={<MyEventsPage />} />
           {/* TODO: add pages as you build them, e.g.
-              /clubs/:slug, /me (dashboard), /profile/:id */}
+              /profile/:id */}
         </Routes>
       </main>
     </div>

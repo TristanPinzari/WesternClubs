@@ -390,8 +390,6 @@ export const updateProfileSchema = z
   .partial();
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
-// TODO: add schemas and types as you build each endpoint in docs/API.md
-
 // ---- Aryan's feed: use only merged tables; public-RSVP ranking is still pending. ----
 export const feedListQuerySchema = eventListQuerySchema.pick({
   limit: true,
@@ -401,3 +399,21 @@ export type FeedReason = "followed_club" | "followed_user" | "interest" | null;
 export interface FeedEvent extends EventSummary {
   reason: FeedReason;
 }
+
+// ---- Dashboard (GET /api/me/events) ----
+
+// One of my RSVPs, with the event it's for. `cancelledAt` is included so the dashboard
+// can warn you when an event you're going to gets cancelled.
+export interface MyEvent {
+  event: EventSummary & { cancelledAt: string | null };
+  rsvp: MyRsvp;
+}
+
+// Upcoming events soonest first, then past events most recent first.
+// TODO: add `saved` here if we build Save (low priority, see docs/API.md).
+export interface MyEvents {
+  upcoming: MyEvent[];
+  past: MyEvent[];
+}
+
+// TODO: add schemas and types as you build each endpoint in docs/API.md

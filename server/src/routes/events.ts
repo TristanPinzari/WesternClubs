@@ -20,12 +20,12 @@ import { mediaUrl } from "../s3";
 export const eventsRouter = Router();
 
 // A joined query returns one object per row with a key per table: { event, club }.
-type EventRow = {
+export type EventRow = {
   event: typeof event.$inferSelect;
   club: typeof club.$inferSelect;
 };
 
-function toEventSummary({ event: e, club: c }: EventRow): EventSummary {
+export function toEventSummary({ event: e, club: c }: EventRow): EventSummary {
   return {
     id: e.id,
     title: e.title,
