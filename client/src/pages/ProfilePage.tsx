@@ -89,7 +89,7 @@ export default function ProfilePage() {
       <div className="flex items-center gap-4">
         <Avatar name={profile.name} image={profile.image} size="lg" />
         <div className="min-w-0">
-          <h1 className="break-words text-2xl font-bold">{profile.name}</h1>
+          <h1 className="wrap-break-word text-2xl font-bold">{profile.name}</h1>
           {(profile.program || profile.yearOfStudy) && (
             <p className="text-gray-600">
               {[
@@ -142,7 +142,7 @@ export default function ProfilePage() {
       </div>
 
       {profile.bio && (
-        <p className="mt-6 whitespace-pre-wrap break-words text-gray-800">
+        <p className="mt-6 whitespace-pre-wrap wrap-break-word text-gray-800">
           {profile.bio}
         </p>
       )}

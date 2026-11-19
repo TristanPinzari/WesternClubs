@@ -147,6 +147,17 @@ Rules:
 - **No follower counts and no follower lists, anywhere** (for students or clubs). This isn't a popularity contest. The API never returns them, so the UI can't show them.
 - Following someone doesn't reveal anything extra about them. You still only see their public profile and the attendee lists they appear on.
 
+## Finding people
+
+So friends can find and follow each other. **Only public profiles are ever returned, never yourself, and never emails.**
+
+| Status | Method | Path                           | Who       | Notes                                                                                                                                                             |
+| ------ | ------ | ------------------------------ | --------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ✅     | GET    | `/api/users?q=&limit=&offset=` | Signed in | `Paginated<PersonSummary>`. No `q`: everyone, A to Z. `q`: searches name and program. Max 50 per page                                                             |
+| ✅     | GET    | `/api/users/suggestions`       | Signed in | `PersonSummary[]`: up to 10 people sharing at least one of your interests, most shared first, excluding people you already follow. Empty if you have no interests |
+
+`PersonSummary` is `{ id, name, image, program, yearOfStudy, isFollowing, sharedInterests }`. The frontend page is `/people` ("People" in the nav).
+
 ## Uploads
 
 | Status | Method | Path           | Who       | Notes                                                                                                                                                        |
@@ -163,13 +174,13 @@ Profile pictures are uploaded to `users/<your user id>/...`, and saving `user.im
 
 ## Privacy rules (summary)
 
-| Who can see...              | Answer                                                                                  |
-| --------------------------- | --------------------------------------------------------------------------------------- |
-| A public profile            | Any signed-in student, who can also follow it                                           |
-| A non-public profile        | Only its owner. It can't be followed, and its owner never appears on attendee lists     |
-| That you RSVP'd to an event | Any signed-in student, on the attendee list, unless you RSVP'd anonymously (toggle off) |
-| Who you follow              | Only you                                                                                |
-| Who follows you / how many  | Nobody, not even you                                                                    |
+| Who can see...              | Answer                                                                                                   |
+| --------------------------- | -------------------------------------------------------------------------------------------------------- |
+| A public profile            | Any signed-in student: it appears in People search and suggestions, and can be followed                  |
+| A non-public profile        | Only its owner. It never appears in People search, suggestions, or attendee lists, and can't be followed |
+| That you RSVP'd to an event | Any signed-in student, on the attendee list, unless you RSVP'd anonymously (toggle off)                  |
+| Who you follow              | Only you                                                                                                 |
+| Who follows you / how many  | Nobody, not even you                                                                                     |
 
 ## Errors
 

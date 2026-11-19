@@ -9,6 +9,7 @@ import FollowingPage from "./pages/FollowingPage";
 import HomePage from "./pages/HomePage";
 import EventDetailPage from "./pages/EventDetailPage";
 import MyEventsPage from "./pages/MyEventsPage";
+import PeoplePage from "./pages/PeoplePage";
 import ProfilePage from "./pages/ProfilePage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
@@ -38,6 +39,9 @@ export default function App() {
           <NavLink to="/clubs" className={navLinkClass}>
             Clubs
           </NavLink>
+          <NavLink to="/people" className={navLinkClass}>
+            People
+          </NavLink>
           {/* Demo identities never call real auth; live mode uses Rokyo's merged menu. */}
           {!useMockExec && <UserMenu />}
         </nav>
@@ -61,6 +65,7 @@ export default function App() {
           <Route path="/me" element={<MyEventsPage />} />
           <Route path="/me/profile" element={<EditProfilePage />} />
           <Route path="/me/following" element={<FollowingPage />} />
+          <Route path="/people" element={<PeoplePage />} />
           <Route path="/profile/:userId" element={<ProfilePage />} />
         </Routes>
       </main>

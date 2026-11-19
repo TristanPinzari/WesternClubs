@@ -360,6 +360,25 @@ export interface MyFollowing {
   users: UserSummary[];
 }
 
+// ---- Finding people (GET /api/users, GET /api/users/suggestions) ----
+
+// GET /api/users?q=&limit=&offset=. No `q` lists everyone (A to Z); `q` searches names
+// and programs. Only public profiles are ever returned, and never yourself.
+export const peopleQuerySchema = z.object({
+  q: emptyAsUndefined(z.string().trim().max(100).optional()),
+  limit: emptyAsUndefined(z.coerce.number().int().min(1).max(50).default(20)),
+  offset: emptyAsUndefined(z.coerce.number().int().min(0).default(0)),
+});
+export type PeopleQuery = z.infer<typeof peopleQuerySchema>;
+
+// A student in search results or suggestions. Never includes an email.
+export interface PersonSummary extends UserSummary {
+  program: string | null;
+  yearOfStudy: number | null;
+  isFollowing: boolean; // do I follow them?
+  sharedInterests: EventCategory[]; // interests we both have (empty if none)
+}
+
 // ---- Profiles ----
 
 // GET /api/profiles/:userId. Your name and picture come from your account (Better Auth's
