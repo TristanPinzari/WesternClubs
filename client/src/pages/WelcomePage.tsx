@@ -92,7 +92,7 @@ export default function WelcomePage() {
       {step === "interests" ? (
         <>
           <h1 className="mt-1 text-2xl font-bold">
-            Welcome to Orbit, {session.user.name.split(" ")[0]}!
+            Welcome to WesternClubs, {session.user.name.split(" ")[0]}!
           </h1>
           <p className="mt-2 text-gray-600">
             What are you into? We'll put events like these first in your feed.

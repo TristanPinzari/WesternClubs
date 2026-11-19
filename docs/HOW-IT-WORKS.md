@@ -1,11 +1,11 @@
 <!--
-  WHAT: A beginner's guide to how Orbit's pieces fit together, following one real request
+  WHAT: A beginner's guide to how the app's pieces fit together, following one real request
     from a click in the browser to the database and back, plus a glossary of terms.
   WITHOUT IT: New teammates would have to piece the architecture together by reading
     every file, and terms like "middleware" or "ORM" would go unexplained.
 -->
 
-# How Orbit Works
+# How WesternClubs Works
 
 This guide follows **one real request** through the whole app: searching on the Clubs page. Every feature you build works the same way, so once you understand this flow you understand the project.
 

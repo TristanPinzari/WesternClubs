@@ -42,7 +42,7 @@ export default function SignInPage() {
   return (
     <div className="mx-auto max-w-sm">
       <h1 className="text-2xl font-bold">Sign in</h1>
-      <p className="mt-1 text-gray-600">Welcome back to Orbit.</p>
+      <p className="mt-1 text-gray-600">Welcome back to WesternClubs.</p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4">
         <label className="block">
@@ -86,7 +86,7 @@ export default function SignInPage() {
       </form>
 
       <p className="mt-4 text-sm text-gray-600">
-        New to Orbit?{" "}
+        New to WesternClubs?{" "}
         <Link to="/sign-up" className="font-medium text-violet-700 underline">
           Create an account
         </Link>

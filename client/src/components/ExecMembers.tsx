@@ -63,7 +63,7 @@ export default function ExecMembers({
   function add(e: FormEvent) {
     e.preventDefault();
     if (!isAllowedEmail(email)) {
-      setError("Use the exec's @uwo.ca Orbit email.");
+      setError("Use the exec's @uwo.ca WesternClubs email.");
       return;
     }
     void act("add", email.trim().toLowerCase(), newRole);

@@ -35,7 +35,8 @@ function isAllowedProfileImage(
     key.startsWith(`users/${userId}/`)
   );
 }
-const PROFILE_IMAGE_ERROR = "Profile pictures must be uploaded through Orbit.";
+const PROFILE_IMAGE_ERROR =
+  "Profile pictures must be uploaded through WesternClubs.";
 
 // Minimal working setup: email + password sign-up and sign-in.
 export const auth = betterAuth({

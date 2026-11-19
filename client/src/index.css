@@ -6,7 +6,7 @@
 @import "tailwindcss";
 
 /*
-  Orbit's accent colour is Western purple (#4F2683, the 700 shade). The app's classes
+  The app's accent colour is Western purple (#4F2683, the 700 shade). The app's classes
   say "violet", so redefining the violet scale here re-colours every button, link, and
   badge at once. To change the accent, change it here, not in each component.
 */

@@ -1,7 +1,7 @@
 // WHAT: "/me/following": the clubs and people I follow, each linking to its page,
 //   with an Unfollow button. Data from GET /api/me/following.
 // WITHOUT IT: You could follow things but never see or tidy up the whole list.
-//   (Only YOU see this list. Orbit never shows who follows you, or how many.)
+//   (Only YOU see this list. WesternClubs never shows who follows you, or how many.)
 import type { ClubSummary, MyFollowing, UserSummary } from "@orbit/shared";
 import { Building2, UsersRound } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";

@@ -126,7 +126,7 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* No follower count anywhere, by design: Orbit isn't a popularity contest. */}
+      {/* No follower count anywhere, by design: WesternClubs isn't a popularity contest. */}
       <div className="mt-4">
         {isMe ? (
           <div className="flex flex-wrap items-center gap-3">

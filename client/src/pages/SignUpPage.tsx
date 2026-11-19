@@ -1,4 +1,4 @@
-// WHAT: The sign-up page ("/sign-up"): creates an Orbit account with Better Auth.
+// WHAT: The sign-up page ("/sign-up"): creates a WesternClubs account with Better Auth.
 //   Only @uwo.ca emails are allowed. We check that here so students see the error right
 //   away, and the server checks it again (server/src/auth.ts) so nobody can skip it.
 // WITHOUT IT: Nobody could create an account, so RSVPs, profiles, and following
@@ -63,7 +63,7 @@ export default function SignUpPage() {
     <div className="mx-auto max-w-sm">
       <h1 className="text-2xl font-bold">Create your account</h1>
       <p className="mt-1 text-gray-600">
-        Orbit is for Western students. Use your @uwo.ca email.
+        WesternClubs is for Western students. Use your @uwo.ca email.
       </p>
 
       <form onSubmit={handleSubmit} className="mt-6 space-y-4" noValidate>

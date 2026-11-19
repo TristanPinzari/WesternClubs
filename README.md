@@ -1,14 +1,14 @@
 <!--
-  WHAT: The project's front page on GitHub: what Orbit is, the stack, how to set it up,
+  WHAT: The project's front page on GitHub: what WesternClubs is, the stack, how to set it up,
     and how the team works.
   WITHOUT IT: New teammates (and judges) would have no starting point.
 -->
 
-# Orbit — Discover Events. Find Your People.
+# WesternClubs — Discover Events. Find Your People.
 
 **A campus event discovery and social networking platform built for Western University students.**
 
-Orbit helps students discover events happening around campus, explore new opportunities, and connect with others who share similar interests.
+WesternClubs helps students discover events happening around campus, explore new opportunities, and connect with others who share similar interests.
 
 ## About the Project
 
@@ -18,9 +18,9 @@ However, information about these events are often scattered across different pla
 
 This makes it difficult for students to discover events, stay informed, and get involved in campus life.
 
-**Orbit aims to solve this problem by bringing campus events and student connections together in one centralized platform.**
+**WesternClubs aims to solve this problem by bringing campus events and student connections together in one centralized platform.**
 
-Events on Orbit are posted directly by club executives through their club's page, so listings come straight from the organizers rather than being scraped from other platforms.
+Events on WesternClubs are posted directly by club executives through their club's page, so listings come straight from the organizers rather than being scraped from other platforms.
 
 Beyond discovering events, students can see who else is planning to attend, explore student profiles, and connect with people who have similar interests.
 
@@ -80,7 +80,7 @@ The goal is to help students discover events and find their people.
 - Follow clubs and other students. Following is one-way and needs no approval.
 - Find people on the **People** page: search by name or program, browse everyone with a public profile, or follow suggested students who share your interests. Private profiles never appear.
 - Events from clubs and people you follow appear higher in your feed.
-- **No follower counts, and nobody can see anyone else's followers.** Orbit is for finding events and people, not for comparing popularity.
+- **No follower counts, and nobody can see anyone else's followers.** WesternClubs is for finding events and people, not for comparing popularity.
 - **See who follows you, and silently block anyone.** Only you can see your own followers. Blocking someone hides you from them everywhere (profile, search, attendee lists), and to them you just look like a private profile.
 
 ### Meeting People at Events
@@ -116,8 +116,8 @@ The goal is to help students discover events and find their people.
 
 **Chosen for a specific reason:**
 
-- **Express as a separate backend (instead of Next.js).** If Orbit went to production, it would almost certainly get a mobile app. With a standalone Express API, the web app and a future mobile app call the exact same endpoints, so nothing has to be rebuilt. With Next.js, much of the logic would likely end up in Server Actions, which only work from Next.js pages. A mobile app can't call them, so we'd have to rebuild that logic as API routes later. Keeping the backend separate also gives us a clear split between frontend and backend work.
-- **PostgreSQL (instead of a document database like MongoDB).** Orbit's data is highly relational: users belong to clubs with roles, clubs post events, users RSVP to events, follow clubs, and connect with each other. Relational databases model this naturally, and constraints such as "one owner per club" or "one RSVP per user per event" can be enforced by the database itself.
+- **Express as a separate backend (instead of Next.js).** If WesternClubs went to production, it would almost certainly get a mobile app. With a standalone Express API, the web app and a future mobile app call the exact same endpoints, so nothing has to be rebuilt. With Next.js, much of the logic would likely end up in Server Actions, which only work from Next.js pages. A mobile app can't call them, so we'd have to rebuild that logic as API routes later. Keeping the backend separate also gives us a clear split between frontend and backend work.
+- **PostgreSQL (instead of a document database like MongoDB).** Our data is highly relational: users belong to clubs with roles, clubs post events, users RSVP to events, follow clubs, and connect with each other. Relational databases model this naturally, and constraints such as "one owner per club" or "one RSVP per user per event" can be enforced by the database itself.
 - **TypeScript everywhere, with a shared package.** The client and server share the same types and validation rules (`shared/`). If the API changes shape, the frontend fails to compile instead of breaking at runtime. That safety net matters for a team with mixed experience.
 - **Better Auth.** Handles password hashing, sessions, and cookies for us instead of us writing (and getting wrong) our own auth. It stores users in our own Postgres database, so we keep full control of user data, and it supports mobile clients if we build one.
 - **Zod.** Validates every request at the API boundary, so bad input is rejected with a clear error before it reaches the database.
@@ -135,7 +135,7 @@ The goal is to help students discover events and find their people.
 ## Project Structure
 
 ```
-orbit/
+westernclubs/
 ├── client/                 React + Vite frontend (deployed to Vercel)
 │   ├── src/pages/          One file per page. ClubsPage.tsx is the example to copy
 │   ├── src/lib/api.ts      fetch helper for calling the backend
@@ -345,6 +345,6 @@ Each member's task list is in [`docs/tasks/`](docs/tasks/).
 
 We believe university is about more than attending classes. It's about discovering opportunities, building meaningful connections, and becoming part of a community.
 
-Orbit makes it easier for students to get involved, discover new experiences, and connect with the people around them.
+WesternClubs makes it easier for students to get involved, discover new experiences, and connect with the people around them.
 
 **Discover events. Find your people.**

@@ -5,7 +5,7 @@
     the permission rules would live only in people's heads.
 -->
 
-# Orbit API
+# WesternClubs API
 
 All routes live under `/api`. Request and response bodies are JSON.
 Request validation schemas and response types go in `shared/src/index.ts`.
@@ -191,7 +191,7 @@ Now **required**, not a stretch goal: club logos, event images, and profile pict
 
 Upload flow: (1) ask `POST /api/uploads` for an upload URL, sending the file's `type` and `size`, (2) the browser `PUT`s the file directly to `uploadUrl` within 5 minutes, with the **same `Content-Type` header** (S3 rejects a different type or size), (3) save the result: `key` for clubs and events (via their `PATCH` endpoints), or `publicUrl` for your profile picture (via `authClient.updateUser`).
 
-Security: when a `PATCH` saves a `logoKey` or `imageKey`, check it starts with the right folder (`clubs/` or `events/`). Otherwise someone could point their club's logo at any file in the bucket. (Done: `uploadKeySchema` in shared. Profile pictures are checked the same way in `server/src/auth.ts`, so `user.image` can only be an Orbit upload.)
+Security: when a `PATCH` saves a `logoKey` or `imageKey`, check it starts with the right folder (`clubs/` or `events/`). Otherwise someone could point their club's logo at any file in the bucket. (Done: `uploadKeySchema` in shared. Profile pictures are checked the same way in `server/src/auth.ts`, so `user.image` can only be a WesternClubs upload.)
 
 Profile pictures are uploaded to `users/<your user id>/...`, and saving `user.image` only accepts a picture from **your own** folder. So nobody can copy someone else's picture URL to pose as them. A new account can't be created with a picture; set it after signing up.
 

@@ -2,7 +2,7 @@
 //   attendee list. Mounted at /api/events next to eventsRouter (see index.ts), so the
 //   URLs read /api/events/:id/rsvp and /api/events/:id/attendees.
 // WITHOUT IT: Students couldn't say they're going, and nobody could see who else is,
-//   which is the "find your people" half of Orbit.
+//   which is the "find your people" half of WesternClubs.
 import {
   rsvpBodySchema,
   type Attendee,

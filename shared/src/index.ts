@@ -331,7 +331,7 @@ export interface ClubMember {
 // through POST /api/clubs/:clubId/transfer-ownership.
 const assignableRole = z.enum(["admin", "editor"]);
 
-// POST /api/clubs/:clubId/members. The person needs an Orbit account already.
+// POST /api/clubs/:clubId/members. The person needs a WesternClubs account already.
 export const addMemberSchema = z.object({
   email: z.string().trim().toLowerCase().pipe(z.email()),
   role: assignableRole,

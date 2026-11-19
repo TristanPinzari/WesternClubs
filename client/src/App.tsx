@@ -1,13 +1,7 @@
 // WHAT: The app's shell: the header/nav that appears on every page, plus the list of
 //   routes (which URL shows which page). Add new pages to <Routes> here.
 // WITHOUT IT: There'd be no navigation, and no URL would show any page.
-import {
-  Building2,
-  Compass,
-  Orbit as OrbitIcon,
-  ShieldCheck,
-  UsersRound,
-} from "lucide-react";
+import { Building2, Compass, ShieldCheck, UsersRound } from "lucide-react";
 import { Link, NavLink, Route, Routes } from "react-router";
 import UserMenu from "./components/UserMenu";
 import ClubsPage from "./pages/ClubsPage";
@@ -61,10 +55,13 @@ export default function App() {
         <nav className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-2.5 md:grid md:grid-cols-[1fr_auto_1fr]">
           <Link
             to="/"
-            className="flex items-center gap-1.5 justify-self-start text-lg font-bold text-violet-700"
+            className="flex shrink-0 items-center gap-2 justify-self-start text-base font-bold whitespace-nowrap text-violet-700 sm:text-lg"
           >
-            <OrbitIcon aria-hidden="true" className="h-6 w-6" />
-            Orbit
+            {/* The same mark as the browser-tab icon (client/public/favicon.svg). */}
+            <img src="/favicon.svg" alt="" className="h-7 w-7" />
+            {/* Under 360px (small phones) there's no room beside Sign in / Sign up, so
+                only the mark shows; screen readers still hear the name. */}
+            <span className="max-[359px]:sr-only">WesternClubs</span>
           </Link>
           <div className="hidden items-center gap-1 md:flex">
             {NAV.map(({ to, label, end }) => (

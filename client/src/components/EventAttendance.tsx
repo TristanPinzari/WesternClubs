@@ -29,7 +29,7 @@ const statusLabels: Record<RsvpStatus, string> = {
 };
 
 // A brand-new RSVP starts VISIBLE. This default is the team decision: attendee lists
-// are a big part of Orbit, so you opt out (anonymous), not in.
+// are a big part of WesternClubs, so you opt out (anonymous), not in.
 const newDraft = (status: RsvpStatus): MyRsvp => ({
   status,
   showOnAttendeeList: true,

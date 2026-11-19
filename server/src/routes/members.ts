@@ -92,7 +92,9 @@ membersRouter.post(
       .from(user)
       .where(eq(sql`lower(${user.email})`, email));
     if (!person) {
-      res.status(404).json({ error: "No Orbit account uses that email" });
+      res
+        .status(404)
+        .json({ error: "No WesternClubs account uses that email" });
       return;
     }
 
