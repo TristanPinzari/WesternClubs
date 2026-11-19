@@ -305,8 +305,8 @@ export default function EditProfilePage() {
               <span className="block font-medium">Public profile</span>
               <span className="block text-sm text-gray-600">
                 {form.isPublic
-                  ? "Signed-in students can see your profile and follow you."
-                  : "Only you can see your profile. Nobody can follow you, and you won't appear on attendee lists. Saving this removes all your current followers, and they won't come back if you go public again."}
+                  ? "Signed-in students can find you in People search, see your profile, and follow you."
+                  : "Only you can see your profile. You won't appear in People search or on attendee lists, and nobody can follow you. Saving this removes all your current followers, and they won't come back if you go public again."}
               </span>
             </span>
           </label>

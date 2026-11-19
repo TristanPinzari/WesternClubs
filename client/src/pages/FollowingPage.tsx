@@ -73,8 +73,10 @@ export default function FollowingPage() {
             <h2 className="text-lg font-semibold">People</h2>
             {data.users.length === 0 ? (
               <p className="mt-2 text-sm text-gray-600">
-                You don't follow anyone yet. Open someone's name on an event's
-                attendee list to follow them.
+                You don't follow anyone yet.{" "}
+                <Link to="/people" className="text-violet-700 underline">
+                  Find people
+                </Link>
               </p>
             ) : (
               <ul className="mt-3 space-y-3">

@@ -78,6 +78,7 @@ The goal is to help students discover events and find their people.
 ### Following
 
 - Follow clubs and other students. Following is one-way and needs no approval.
+- Find people on the **People** page: search by name or program, browse everyone with a public profile, or follow suggested students who share your interests. Private profiles never appear.
 - Events from clubs and people you follow appear higher in your feed.
 - **No follower counts or follower lists.** Orbit is for finding events and people, not for comparing popularity.
 
