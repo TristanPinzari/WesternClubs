@@ -6,6 +6,7 @@ import type {
   PersonSummary,
   Profile,
   UpdateProfileInput,
+  UserSummary,
 } from "@orbit/shared";
 import { apiGet, apiWrite } from "./api";
 
@@ -35,6 +36,17 @@ export const setFollowing = (userId: string, follow: boolean) =>
   apiWrite(
     `/users/${encodeURIComponent(userId)}/follow`,
     follow ? "PUT" : "DELETE",
+  );
+
+// Only you can see your own followers and blocked list.
+export const getFollowers = () => apiGet<UserSummary[]>("/me/followers");
+export const getBlocked = () => apiGet<UserSummary[]>("/me/blocked");
+
+// A silent block: they're not told, and you just look like a private profile to them.
+export const setBlocked = (userId: string, block: boolean) =>
+  apiWrite(
+    `/users/${encodeURIComponent(userId)}/block`,
+    block ? "PUT" : "DELETE",
   );
 
 // ---- Labels ----

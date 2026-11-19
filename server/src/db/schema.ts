@@ -223,3 +223,25 @@ export const userFollow = pgTable(
     check("user_follow_not_self", sql`${t.followerId} <> ${t.followeeId}`),
   ],
 );
+
+// user_block: a SILENT block. To the blocked person, the blocker looks exactly like a
+// private profile: their profile 404s, and they disappear from search, suggestions,
+// attendee lists, and the feed. Nothing tells the blocked person they were blocked.
+export const userBlock = pgTable(
+  "user_block",
+  {
+    blockerId: text("blocker_id") // the person who clicked "Block"
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    blockedId: text("blocked_id") // the person who can no longer see them
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: ts("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.blockerId, t.blockedId] }),
+    // "Who has blocked me?" is checked on almost every list, so index that direction.
+    index("user_block_blocked_idx").on(t.blockedId),
+    check("user_block_not_self", sql`${t.blockerId} <> ${t.blockedId}`),
+  ],
+);

@@ -11,6 +11,7 @@ import { categoryLabels } from "../lib/eventDisplay";
 import {
   getProfile,
   linkLabels,
+  setBlocked,
   setFollowing,
   yearLabel,
 } from "../lib/profiles";
@@ -22,12 +23,14 @@ export default function ProfilePage() {
   const [error, setError] = useState<string | null>(null);
   const [followBusy, setFollowBusy] = useState(false);
   const [followError, setFollowError] = useState<string | null>(null);
+  const [blockedThem, setBlockedThem] = useState(false);
 
   const me = session?.user;
   useEffect(() => {
     if (!userId || !me) return;
     let ignore = false;
     setProfile(null);
+    setBlockedThem(false);
     setError(null);
     getProfile(userId)
       .then((p) => !ignore && setProfile(p))
@@ -84,6 +87,28 @@ export default function ProfilePage() {
     }
   }
 
+  // Someone can see you on attendee lists without following you, so blocking is
+  // offered here too, not only on the Followers page.
+  async function block() {
+    if (!profile) return;
+    if (
+      !window.confirm(
+        `Block ${profile.name}? They won't be able to see your profile, find you in search, or see you on attendee lists, and they'll stop following you. They won't be told.`,
+      )
+    )
+      return;
+    setFollowBusy(true);
+    setFollowError(null);
+    try {
+      await setBlocked(profile.userId, true);
+      setBlockedThem(true);
+    } catch (err) {
+      setFollowError(err instanceof Error ? err.message : "Could not block.");
+    } finally {
+      setFollowBusy(false);
+    }
+  }
+
   return (
     <article>
       <div className="flex items-center gap-4">
@@ -119,20 +144,38 @@ export default function ProfilePage() {
               </span>
             )}
           </div>
+        ) : blockedThem ? (
+          <p className="text-sm text-gray-700">
+            You blocked {profile.name}. Unblock them from your{" "}
+            <Link to="/me/followers" className="text-violet-700 underline">
+              Followers page
+            </Link>
+            .
+          </p>
         ) : (
-          <button
-            type="button"
-            onClick={toggleFollow}
-            disabled={followBusy}
-            aria-pressed={profile.isFollowing}
-            className={`min-h-11 rounded-lg px-5 font-semibold disabled:opacity-50 ${
-              profile.isFollowing
-                ? "border border-gray-300 text-gray-800"
-                : "bg-violet-700 text-white"
-            }`}
-          >
-            {profile.isFollowing ? "Following" : "Follow"}
-          </button>
+          <div className="flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              onClick={toggleFollow}
+              disabled={followBusy}
+              aria-pressed={profile.isFollowing}
+              className={`min-h-11 rounded-lg px-5 font-semibold disabled:opacity-50 ${
+                profile.isFollowing
+                  ? "border border-gray-300 text-gray-800"
+                  : "bg-violet-700 text-white"
+              }`}
+            >
+              {profile.isFollowing ? "Following" : "Follow"}
+            </button>
+            <button
+              type="button"
+              onClick={block}
+              disabled={followBusy}
+              className="min-h-11 px-2 text-sm text-red-700 underline disabled:opacity-50"
+            >
+              Block
+            </button>
+          </div>
         )}
         {followError && (
           <p role="alert" className="mt-2 text-sm text-red-600">

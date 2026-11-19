@@ -1,5 +1,5 @@
 // WHAT: Endpoints about other students (everything under /api/users): finding them
-//   (search and suggestions) and following them.
+//   (search and suggestions), following them, and blocking them.
 // WITHOUT IT: Students couldn't find their friends or follow each other, so the "For
 //   you" feed couldn't show "People you follow are going".
 import {
@@ -20,8 +20,9 @@ import {
   or,
 } from "drizzle-orm";
 import { Router } from "express";
+import { hasBlocked, notBlockedBy } from "../blocks";
 import { db } from "../db";
-import { profile, user, userFollow } from "../db/schema";
+import { profile, user, userBlock, userFollow } from "../db/schema";
 import { requireAuth } from "../middleware";
 
 export const usersRouter = Router();
@@ -98,6 +99,7 @@ usersRouter.get("/", requireAuth, async (req, res) => {
   const where = and(
     ne(user.id, me),
     isPublic,
+    notBlockedBy(user.id, me), // people who blocked me never appear
     pattern
       ? or(ilike(user.name, pattern), ilike(profile.program, pattern))
       : undefined,
@@ -159,6 +161,7 @@ usersRouter.get("/suggestions", requireAuth, async (req, res) => {
       and(
         ne(user.id, me),
         isPublic,
+        notBlockedBy(user.id, me),
         arrayOverlaps(profile.interests, mine), // at least one interest in common
         isNull(userFollow.followerId), // not already followed
       ),
@@ -182,7 +185,11 @@ usersRouter.put("/:userId/follow", requireAuth, async (req, res) => {
     res.status(400).json({ error: "You can't follow yourself" });
     return;
   }
-  if (!(await isPublicProfile(targetId))) {
+  // Private, or they blocked me: the same 404 either way, so a block stays silent.
+  if (
+    !(await isPublicProfile(targetId)) ||
+    (await hasBlocked(targetId, req.user!.id))
+  ) {
     res.status(404).json({ error: "Profile not found" });
     return;
   }
@@ -202,6 +209,53 @@ usersRouter.delete("/:userId/follow", requireAuth, async (req, res) => {
       and(
         eq(userFollow.followerId, req.user!.id),
         eq(userFollow.followeeId, String(req.params.userId)),
+      ),
+    );
+  res.status(204).end();
+});
+
+// PUT /api/users/:userId/block  -> 204  (silently block someone)
+// Removes their follow of me and hides me from them everywhere (see blocks.ts). They
+// aren't told: to them I just look like a private profile. Safe to repeat.
+usersRouter.put("/:userId/block", requireAuth, async (req, res) => {
+  const me = req.user!.id;
+  const targetId = String(req.params.userId);
+  if (targetId === me) {
+    res.status(400).json({ error: "You can't block yourself" });
+    return;
+  }
+  const [target] = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(eq(user.id, targetId));
+  if (!target) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  // Both or neither: never block someone but leave their follow in place.
+  await db.transaction(async (tx) => {
+    await tx
+      .insert(userBlock)
+      .values({ blockerId: me, blockedId: targetId })
+      .onConflictDoNothing();
+    await tx
+      .delete(userFollow)
+      .where(
+        and(eq(userFollow.followerId, targetId), eq(userFollow.followeeId, me)),
+      );
+  });
+  res.status(204).end();
+});
+
+// DELETE /api/users/:userId/block  -> 204  (unblock)
+// They can see me again, but their old follow doesn't come back.
+usersRouter.delete("/:userId/block", requireAuth, async (req, res) => {
+  await db
+    .delete(userBlock)
+    .where(
+      and(
+        eq(userBlock.blockerId, req.user!.id),
+        eq(userBlock.blockedId, String(req.params.userId)),
       ),
     );
   res.status(204).end();

@@ -5,6 +5,7 @@ import { NavLink, Route, Routes } from "react-router";
 import UserMenu from "./components/UserMenu";
 import ClubsPage from "./pages/ClubsPage";
 import EditProfilePage from "./pages/EditProfilePage";
+import FollowersPage from "./pages/FollowersPage";
 import FollowingPage from "./pages/FollowingPage";
 import HomePage from "./pages/HomePage";
 import EventDetailPage from "./pages/EventDetailPage";
@@ -65,6 +66,7 @@ export default function App() {
           <Route path="/me" element={<MyEventsPage />} />
           <Route path="/me/profile" element={<EditProfilePage />} />
           <Route path="/me/following" element={<FollowingPage />} />
+          <Route path="/me/followers" element={<FollowersPage />} />
           <Route path="/people" element={<PeoplePage />} />
           <Route path="/profile/:userId" element={<ProfilePage />} />
         </Routes>

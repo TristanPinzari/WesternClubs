@@ -46,6 +46,11 @@ export default function FollowingPage() {
       <p className="mt-1 text-gray-600">
         Events from these clubs and people show up first in your feed.
       </p>
+      <p className="mt-2">
+        <Link to="/me/followers" className="text-violet-700 underline">
+          Your followers
+        </Link>
+      </p>
       {error && <p className="mt-4 text-red-600">{error}</p>}
       {!data && !error && <p className="mt-4 text-gray-600">Loading…</p>}
 

@@ -12,6 +12,7 @@ import {
 import { and, asc, count, desc, eq, isNull, or } from "drizzle-orm";
 import { Router, type Response } from "express";
 import { z } from "zod";
+import { notBlockedBy } from "../blocks";
 import { db } from "../db";
 import { event, eventRsvp, profile, user } from "../db/schema";
 import { requireAuth } from "../middleware";
@@ -151,6 +152,7 @@ rsvpsRouter.get("/:id/attendees", requireAuth, async (req, res) => {
         eq(eventRsvp.eventId, found.id),
         eq(eventRsvp.showOnAttendeeList, true),
         or(isNull(profile.isPublic), eq(profile.isPublic, true)),
+        notBlockedBy(eventRsvp.userId, req.user!.id), // hide people who blocked me
       ),
     )
     // "going" sorts before "interested" (enum order), then earliest RSVP first.

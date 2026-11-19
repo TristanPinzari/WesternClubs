@@ -63,6 +63,9 @@ export default function MyEventsPage() {
           <Link to="/me/following" className="text-violet-700 underline">
             Following
           </Link>
+          <Link to="/me/followers" className="text-violet-700 underline">
+            Followers
+          </Link>
           <Link
             to={`/profile/${session.user.id}`}
             className="text-violet-700 underline"

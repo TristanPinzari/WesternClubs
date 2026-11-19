@@ -5,9 +5,11 @@ import {
   updateProfileSchema,
   type MyClub,
   type MyFollowing,
+  type UserSummary,
 } from "@orbit/shared";
 import { and, asc, eq, isNull, or } from "drizzle-orm";
 import { Router } from "express";
+import { notBlockedBy } from "../blocks";
 import { db } from "../db";
 import {
   club,
@@ -15,6 +17,7 @@ import {
   clubMember,
   profile,
   user,
+  userBlock,
   userFollow,
 } from "../db/schema";
 import { requireAuth } from "../middleware";
@@ -41,8 +44,7 @@ meRouter.get("/clubs", async (req, res) => {
   res.json(body);
 });
 
-// GET /api/me/following  -> { clubs, users } I follow, A to Z
-// Only about me: there's deliberately no way to see who follows YOU, or how many.
+// GET /api/me/following  -> { clubs, users } I follow, A to Z. Only I can see it.
 meRouter.get("/following", async (req, res) => {
   const me = req.user!.id;
   const [clubRows, users] = await Promise.all([
@@ -62,6 +64,7 @@ meRouter.get("/following", async (req, res) => {
           eq(userFollow.followerId, me),
           // Skip anyone whose profile is now private (no profile row = public)
           or(isNull(profile.isPublic), eq(profile.isPublic, true)),
+          notBlockedBy(user.id, me),
         ),
       )
       .orderBy(asc(user.name), asc(user.id)),
@@ -70,6 +73,30 @@ meRouter.get("/following", async (req, res) => {
     clubs: clubRows.map((r) => toClubSummary(r.club)),
     users,
   };
+  res.json(body);
+});
+
+// GET /api/me/followers  -> UserSummary[] (people who follow me), A to Z
+// ONLY I can see my own followers. There's no count or list on anyone's profile, so
+// nobody can compare popularity. Block someone to remove them (PUT /api/users/:id/block).
+meRouter.get("/followers", async (req, res) => {
+  const body: UserSummary[] = await db
+    .select({ id: user.id, name: user.name, image: user.image })
+    .from(userFollow)
+    .innerJoin(user, eq(user.id, userFollow.followerId))
+    .where(eq(userFollow.followeeId, req.user!.id))
+    .orderBy(asc(user.name), asc(user.id));
+  res.json(body);
+});
+
+// GET /api/me/blocked  -> UserSummary[] (people I've blocked), A to Z, so I can unblock
+meRouter.get("/blocked", async (req, res) => {
+  const body: UserSummary[] = await db
+    .select({ id: user.id, name: user.name, image: user.image })
+    .from(userBlock)
+    .innerJoin(user, eq(user.id, userBlock.blockedId))
+    .where(eq(userBlock.blockerId, req.user!.id))
+    .orderBy(asc(user.name), asc(user.id));
   res.json(body);
 });
 

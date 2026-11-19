@@ -99,7 +99,7 @@ private profiles; never return attendee identities in the feed.
 Ranking: every event gets the **highest** matching group, then the feed is sorted by group, then soonest first (`ORDER BY score DESC, starts_at, id`, so pagination stays stable):
 
 1. **From a club you follow.** `reason: "followed_club"`
-2. **A person you follow is going or interested.** `reason: "followed_user"`. **Only count RSVPs with `showOnAttendeeList = true`.** Otherwise the feed would reveal RSVPs made anonymously.
+2. **A person you follow is going or interested.** `reason: "followed_user"`. **Only count RSVPs with `showOnAttendeeList = true`**, from public profiles, and **skip people who have blocked the viewer** (`notBlockedBy` in `server/src/blocks.ts`). Otherwise the feed would reveal RSVPs made anonymously, or let a blocked person keep tracking someone.
 3. **Its category is one of your profile interests.** `reason: "interest"`
 4. Everything else. `reason: null`
 
@@ -141,11 +141,25 @@ Following is **one-way and needs no approval**: follow a club or a person, and t
 | ✅     | PUT / DELETE | `/api/clubs/:clubId/follow` | Signed in | Follow or unfollow a club (also listed under Clubs). 204, safe to repeat                               |
 | ✅     | PUT / DELETE | `/api/users/:userId/follow` | Signed in | Follow or unfollow a student. 400 for yourself. 404 if their profile isn't public. 204, safe to repeat |
 | ✅     | GET          | `/api/me/following`         | Signed in | `MyFollowing`: `{ clubs, users }` I follow, A to Z. Only I can see my own list                         |
+| ✅     | GET          | `/api/me/followers`         | Signed in | `UserSummary[]`: people who follow me, A to Z. **Only I can see my own followers**                     |
+| ✅     | PUT / DELETE | `/api/users/:userId/block`  | Signed in | Block or unblock someone. 400 for yourself, 404 if they don't exist. 204, safe to repeat               |
+| ✅     | GET          | `/api/me/blocked`           | Signed in | `UserSummary[]`: people I've blocked, A to Z, so I can unblock them                                    |
 
 Rules:
 
-- **No follower counts and no follower lists, anywhere** (for students or clubs). This isn't a popularity contest. The API never returns them, so the UI can't show them.
+- **No follower counts anywhere, and nobody can see anyone else's followers** (for students or clubs). This isn't a popularity contest. You can see your **own** followers, so you know who can see where you're going, and block anyone you don't want following you.
 - Following someone doesn't reveal anything extra about them. You still only see their public profile and the attendee lists they appear on.
+
+### Blocking (silent)
+
+If A blocks B, then **to B, A looks exactly like a private profile**. B is never told:
+
+- A's profile returns 404 for B, and B can't follow A (same 404 as a private profile).
+- B's existing follow of A is removed. Unblocking doesn't bring it back.
+- A disappears from B's People search, suggestions, Following list, and attendee lists.
+- The "For you" feed must not use A's RSVPs for B (see the feed rules above).
+
+Every query that lists other students must include `notBlockedBy(personColumn, viewerId)` from `server/src/blocks.ts`. Known gap: club exec lists (`GET /api/clubs/:clubId/members`) still show A to B, since club roles are public.
 
 ## Finding people
 
@@ -180,7 +194,8 @@ Profile pictures are uploaded to `users/<your user id>/...`, and saving `user.im
 | A non-public profile        | Only its owner. It never appears in People search, suggestions, or attendee lists, and can't be followed |
 | That you RSVP'd to an event | Any signed-in student, on the attendee list, unless you RSVP'd anonymously (toggle off)                  |
 | Who you follow              | Only you                                                                                                 |
-| Who follows you / how many  | Nobody, not even you                                                                                     |
+| Who follows you             | Only you (`/me/followers`). Nobody can see anyone else's followers, and no counts are shown              |
+| You, if you've blocked them | Nothing: to them you look like a private profile, and they aren't told                                   |
 
 ## Errors
 
