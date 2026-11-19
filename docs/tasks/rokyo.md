@@ -103,13 +103,13 @@ All the backend you need is merged, so nothing here waits on anyone else.
 
 Right now nobody can RSVP in the app: `EventAttendance` exists, but the event page still shows a placeholder.
 
-- [ ] In `client/src/pages/EventDetailPage.tsx`, replace the `TODO(Rokyo)` placeholder (around line 197) with:
+- [x] In `client/src/pages/EventDetailPage.tsx`, replace the `TODO(Rokyo)` placeholder (around line 197) with:
   ```tsx
   <EventAttendance key={event.id} eventId={event.id} closed={...} />
   ```
   - `key={event.id}` makes React start fresh when you go from one event to another, so the old event's form never carries over.
   - `closed` should be true if the event is cancelled or has already ended.
-- [ ] Test it: RSVP Going, switch to Interested, RSVP anonymously from a second account, and check the attendee list and counts update.
+- [x] Test it: RSVP Going, switch to Interested, RSVP anonymously from a second account, and check the attendee list and counts update.
 
 ### 2. Onboarding after sign-up
 
