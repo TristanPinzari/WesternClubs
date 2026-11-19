@@ -12,9 +12,11 @@
   "dependencies": {
     "@orbit/shared": "^0.0.0",
     "better-auth": "^1.7.22",
+    "lucide-react": "^1.76.0",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
-    "react-router": "^7.18.5"
+    "react-router": "^7.18.5",
+    "simple-icons": "^16.38.0"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.5",

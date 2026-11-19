@@ -5,13 +5,25 @@ import {
   LINK_KINDS,
   createClubSchema,
   updateClubSchema,
+  type LinkKind,
   type Links,
 } from "@orbit/shared";
 import type { ClubDetails, ClubInput } from "../lib/execTypes";
 import { buttonClass, inputClass, optionalHttpUrl } from "../lib/formUtils";
+import { linkLabels } from "../lib/profiles";
 import Field from "./Field";
 import ImageUpload from "./ImageUpload";
 import RequestState from "./RequestState";
+
+// Example links, so execs can see what each field expects.
+const linkPlaceholders: Record<LinkKind, string> = {
+  website: "https://yourclub.ca",
+  instagram: "https://instagram.com/yourclub",
+  linktree: "https://linktr.ee/yourclub",
+  linkedin: "https://linkedin.com/company/yourclub",
+  discord: "https://discord.gg/invite-code",
+  github: "https://github.com/yourclub",
+};
 
 export default function ClubForm({
   initial,
@@ -99,13 +111,11 @@ export default function ClubForm({
             Use complete http(s) links. Clear a field to remove that link.
           </p>
           {LINK_KINDS.map((kind) => (
-            <Field
-              key={kind}
-              label={kind[0].toUpperCase() + kind.slice(1) + " URL"}
-            >
+            <Field key={kind} label={`${linkLabels[kind]} URL`}>
               <input
                 type="url"
                 maxLength={500}
+                placeholder={linkPlaceholders[kind]}
                 value={links[kind] ?? ""}
                 className={inputClass}
                 onChange={(e) =>

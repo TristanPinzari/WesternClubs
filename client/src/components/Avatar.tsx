@@ -1,6 +1,7 @@
 // WHAT: A round profile picture, or the person's first initial when they have none.
 //   Used in the header, on attendee lists, and on profile pages.
 // WITHOUT IT: Each of those places would draw avatars slightly differently.
+import { initialOf } from "../lib/ui";
 
 const sizes = {
   sm: "h-7 w-7 text-xs",
@@ -33,7 +34,7 @@ export default function Avatar({
       aria-hidden="true"
       className={`${sizes[size]} flex shrink-0 items-center justify-center rounded-full bg-violet-100 font-semibold text-violet-800`}
     >
-      {name.trim().charAt(0).toUpperCase() || "?"}
+      {initialOf(name)}
     </span>
   );
 }

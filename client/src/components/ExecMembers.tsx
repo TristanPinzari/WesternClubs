@@ -7,6 +7,7 @@ import { useResource } from "../hooks/useResource";
 import { getMembers, writeMember } from "../lib/clubs";
 import { canManageMember } from "../lib/execTypes";
 import { buttonClass, inputClass } from "../lib/formUtils";
+import { btnDanger } from "../lib/ui";
 import Field from "./Field";
 import RequestState from "./RequestState";
 
@@ -114,7 +115,7 @@ export default function ExecMembers({
                 <button
                   type="button"
                   disabled={busy || state.loading || state.refreshing}
-                  className="min-h-11 text-red-700 underline"
+                  className={btnDanger}
                   onClick={() => {
                     if (
                       window.confirm(

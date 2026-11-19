@@ -32,6 +32,25 @@ export function formatEventTime(value: string) {
   }).format(new Date(value));
 }
 
+// Pieces of an event date for the calendar-style tile ("NOV" / "20") and the card's
+// "Thu" label. `year` lets a card show the year only when it isn't this year.
+export function eventDateParts(value: string) {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: "America/Toronto",
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).formatToParts(new Date(value));
+  const get = (type: string) => parts.find((p) => p.type === type)?.value ?? "";
+  return {
+    month: get("month").replace(".", ""),
+    day: get("day"),
+    weekday: get("weekday").replace(".", ""),
+    year: get("year"),
+  };
+}
+
 export function formatPrice(priceCents: number) {
   if (priceCents === 0) return "Free";
   // The API stores whole cents. Only convert to dollars when displaying the price.

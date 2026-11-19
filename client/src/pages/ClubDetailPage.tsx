@@ -1,16 +1,18 @@
 // WHAT: Public club page, upcoming events, following, and role-aware exec entry points.
 // WITHOUT IT: Club links have no destination and execs cannot find their posting tools.
+import { ArrowLeft, Pencil, Plus, Settings } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router";
 import EventCard from "../components/EventCard";
 import FollowClubButton from "../components/FollowClubButton";
 import RequestState from "../components/RequestState";
+import SocialLinks from "../components/SocialLinks";
+import { btnQuiet, btnSecondary, initialOf } from "../lib/ui";
 import { useClubAccess } from "../hooks/useClubAccess";
 import { useResource } from "../hooks/useResource";
 import { getClub } from "../lib/clubs";
 import { listEvents } from "../lib/events";
 import { canManageClub, canPostEvent } from "../lib/execTypes";
-import { registrationLink } from "../lib/eventDisplay";
 
 export default function ClubDetailPage() {
   const { slug = "" } = useParams();
@@ -45,9 +47,10 @@ function ClubDetail({ slug }: { slug: string }) {
     <section>
       <Link
         to="/clubs"
-        className="inline-flex min-h-11 items-center text-violet-700 underline"
+        className="-ml-1 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-1 text-sm font-medium text-gray-600 hover:text-violet-700"
       >
-        ← All clubs
+        <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+        All clubs
       </Link>
       <RequestState {...club} />
       {warning && (
@@ -61,38 +64,31 @@ function ClubDetail({ slug }: { slug: string }) {
       {club.data && (
         <>
           <div className="mt-3 flex items-center gap-4">
-            {club.data.logoUrl && (
+            {club.data.logoUrl ? (
               <img
                 src={club.data.logoUrl}
                 alt=""
-                className="h-20 w-20 shrink-0 rounded-full object-cover"
+                className="h-20 w-20 shrink-0 rounded-2xl border border-gray-200 object-cover"
               />
+            ) : (
+              <span
+                aria-hidden="true"
+                className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-violet-100 text-3xl font-bold text-violet-700"
+              >
+                {initialOf(club.data.name)}
+              </span>
             )}
             <h1 className="min-w-0 wrap-break-word text-2xl font-bold">
               {club.data.name}
             </h1>
           </div>
-          <p className="mt-4 whitespace-pre-wrap wrap-break-word text-gray-700">
-            {club.data.description}
-          </p>
-          <ul className="mt-3 flex flex-wrap gap-4">
-            {Object.entries(club.data.links ?? {}).map(
-              ([label, url]) =>
-                registrationLink(url) && (
-                  <li key={label}>
-                    <a
-                      href={url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-violet-700 underline"
-                    >
-                      {label}
-                    </a>
-                  </li>
-                ),
-            )}
-          </ul>
-          <div className="mt-4 flex flex-wrap items-start gap-3">
+          {club.data.description && (
+            <p className="mt-4 whitespace-pre-wrap wrap-break-word text-gray-700">
+              {club.data.description}
+            </p>
+          )}
+          <SocialLinks links={club.data.links ?? {}} className="mt-4" />
+          <div className="mt-4 flex flex-wrap items-start gap-2">
             {access.viewer.user && (
               <FollowClubButton
                 key={`${access.viewer.user.id}:${clubId}`}
@@ -102,17 +98,19 @@ function ClubDetail({ slug }: { slug: string }) {
             )}
             {!access.loading && canPostEvent(access.role) && (
               <Link
-                className="inline-flex min-h-11 items-center rounded-lg bg-violet-700 px-4 py-2 text-white"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg bg-violet-700 px-4 py-2 font-semibold text-white transition hover:bg-violet-800"
                 to={`/clubs/${slug}/events/new`}
               >
+                <Plus aria-hidden="true" className="h-4 w-4" />
                 Post event
               </Link>
             )}
             {!access.loading && canManageClub(access.role) && (
               <Link
-                className="inline-flex min-h-11 items-center text-violet-700 underline"
+                className="inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 transition hover:border-violet-300 hover:text-violet-700"
                 to={`/clubs/${slug}/settings`}
               >
+                <Settings aria-hidden="true" className="h-4 w-4" />
                 Settings
               </Link>
             )}
@@ -139,9 +137,11 @@ function ClubDetail({ slug }: { slug: string }) {
                     {!access.loading && canPostEvent(access.role) && (
                       <Link
                         to={`/events/${event.id}/edit`}
-                        className="inline-flex min-h-11 items-center text-violet-700 underline"
+                        aria-label={`Edit event: ${event.title}`}
+                        className={`mt-2 ${btnQuiet}`}
                       >
-                        Edit {event.title}
+                        <Pencil aria-hidden="true" />
+                        Edit event
                       </Link>
                     )}
                   </li>
@@ -156,7 +156,7 @@ function ClubDetail({ slug }: { slug: string }) {
                     type="button"
                     disabled={!page}
                     onClick={() => setPage((value) => value - 1)}
-                    className="min-h-11 disabled:opacity-40"
+                    className={btnSecondary}
                   >
                     Previous
                   </button>
@@ -165,7 +165,7 @@ function ClubDetail({ slug }: { slug: string }) {
                     type="button"
                     disabled={(page + 1) * 12 >= events.data.total}
                     onClick={() => setPage((value) => value + 1)}
-                    className="min-h-11 disabled:opacity-40"
+                    className={btnSecondary}
                   >
                     Next
                   </button>

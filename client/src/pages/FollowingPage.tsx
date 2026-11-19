@@ -3,9 +3,12 @@
 // WITHOUT IT: You could follow things but never see or tidy up the whole list.
 //   (Only YOU see this list. Orbit never shows who follows you, or how many.)
 import type { ClubSummary, MyFollowing, UserSummary } from "@orbit/shared";
+import { Building2, UsersRound } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import Avatar from "../components/Avatar";
+import FollowTabs from "../components/FollowTabs";
+import { btnPrimary, btnSecondary, initialOf, textLink } from "../lib/ui";
 import { apiGet } from "../lib/api";
 import { authClient } from "../lib/auth-client";
 import { followClub } from "../lib/clubs";
@@ -32,7 +35,7 @@ export default function FollowingPage() {
   if (!session) {
     return (
       <p className="text-gray-700">
-        <Link to="/sign-in" className="font-medium text-violet-700 underline">
+        <Link to="/sign-in" className={textLink}>
           Sign in
         </Link>{" "}
         to see who you follow.
@@ -42,14 +45,10 @@ export default function FollowingPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Following</h1>
+      <FollowTabs />
+      <h1 className="mt-5 text-2xl font-bold">Following</h1>
       <p className="mt-1 text-gray-600">
         Events from these clubs and people show up first in your feed.
-      </p>
-      <p className="mt-2">
-        <Link to="/me/followers" className="text-violet-700 underline">
-          Your followers
-        </Link>
       </p>
       {error && <p className="mt-4 text-red-600">{error}</p>}
       {!data && !error && <p className="mt-4 text-gray-600">Loading…</p>}
@@ -59,12 +58,15 @@ export default function FollowingPage() {
           <section className="mt-6">
             <h2 className="text-lg font-semibold">Clubs</h2>
             {data.clubs.length === 0 ? (
-              <p className="mt-2 text-sm text-gray-600">
-                You don't follow any clubs yet.{" "}
-                <Link to="/clubs" className="text-violet-700 underline">
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <p className="text-sm text-gray-600">
+                  You don't follow any clubs yet.
+                </p>
+                <Link to="/clubs" className={btnSecondary}>
+                  <Building2 aria-hidden="true" />
                   Browse clubs
                 </Link>
-              </p>
+              </div>
             ) : (
               <ul className="mt-3 space-y-3">
                 {data.clubs.map((club) => (
@@ -77,12 +79,15 @@ export default function FollowingPage() {
           <section className="mt-8">
             <h2 className="text-lg font-semibold">People</h2>
             {data.users.length === 0 ? (
-              <p className="mt-2 text-sm text-gray-600">
-                You don't follow anyone yet.{" "}
-                <Link to="/people" className="text-violet-700 underline">
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <p className="text-sm text-gray-600">
+                  You don't follow anyone yet.
+                </p>
+                <Link to="/people" className={btnSecondary}>
+                  <UsersRound aria-hidden="true" />
                   Find people
                 </Link>
-              </p>
+              </div>
             ) : (
               <ul className="mt-3 space-y-3">
                 {data.users.map((person) => (
@@ -142,7 +147,7 @@ function Row({
           onClick={toggle}
           disabled={busy}
           aria-label={`${following ? "Unfollow" : "Follow"} ${name}`}
-          className="min-h-11 rounded-lg border border-gray-300 px-4 text-sm font-medium disabled:opacity-50"
+          className={following ? btnSecondary : btnPrimary}
         >
           {following ? "Unfollow" : "Follow again"}
         </button>
@@ -170,7 +175,7 @@ function ClubRow({ club }: { club: ClubSummary }) {
             aria-hidden="true"
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-violet-100 font-semibold text-violet-800"
           >
-            {club.name.charAt(0)}
+            {initialOf(club.name)}
           </span>
         )
       }

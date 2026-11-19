@@ -1,5 +1,7 @@
 // WHAT: Generic upload control for club logos, event images, and Rokyo's user pictures.
 // WITHOUT IT: Each page would duplicate upload validation, progress, and retry handling.
+import { Trash2 } from "lucide-react";
+import { btnQuiet } from "../lib/ui";
 import { useEffect, useId, useRef, useState } from "react";
 import { IMAGE_TYPES, uploadImage } from "../lib/uploads";
 import type { UploadedImage, UploadFolder } from "../lib/execTypes";
@@ -86,8 +88,9 @@ export default function ImageUpload({
             setError(null);
             onChange(null);
           }}
-          className="min-h-11 text-violet-700 underline"
+          className={btnQuiet}
         >
+          <Trash2 aria-hidden="true" />
           Remove image
         </button>
       )}

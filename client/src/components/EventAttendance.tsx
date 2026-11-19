@@ -12,6 +12,7 @@ import type {
 import { ATTENDANCE_PURPOSES } from "@orbit/shared";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
+import { btnQuiet, btnSecondary, textLink } from "../lib/ui";
 import Avatar from "./Avatar";
 import { authClient } from "../lib/auth-client";
 import {
@@ -122,10 +123,7 @@ export default function EventAttendance({ eventId, closed }: Props) {
           </p>
         ) : isPending ? null : !session ? (
           <p className="text-sm text-gray-700">
-            <Link
-              to="/sign-in"
-              className="font-medium text-violet-700 underline"
-            >
+            <Link to="/sign-in" className={textLink}>
               Sign in
             </Link>{" "}
             to RSVP and see who's going.
@@ -153,7 +151,7 @@ export default function EventAttendance({ eventId, closed }: Props) {
               <button
                 type="button"
                 onClick={() => setDraft(mine)}
-                className="min-h-11 rounded-lg border border-gray-300 px-4 font-medium"
+                className={btnSecondary}
               >
                 Change
               </button>
@@ -161,7 +159,7 @@ export default function EventAttendance({ eventId, closed }: Props) {
                 type="button"
                 onClick={handleRemove}
                 disabled={saving}
-                className="min-h-11 px-2 text-sm text-gray-600 underline disabled:opacity-50"
+                className={btnQuiet}
               >
                 Remove RSVP
               </button>
@@ -318,11 +316,7 @@ function RsvpForm({
         >
           {saving ? "Saving…" : "Confirm RSVP"}
         </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="min-h-11 px-3 text-gray-600 underline"
-        >
+        <button type="button" onClick={onCancel} className={btnQuiet}>
           Cancel
         </button>
       </div>

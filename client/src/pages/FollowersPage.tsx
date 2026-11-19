@@ -6,8 +6,10 @@ import type { UserSummary } from "@orbit/shared";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import Avatar from "../components/Avatar";
+import FollowTabs from "../components/FollowTabs";
 import { authClient } from "../lib/auth-client";
 import { getBlocked, getFollowers, setBlocked } from "../lib/profiles";
+import { btnDanger, btnSecondary, textLink } from "../lib/ui";
 
 export default function FollowersPage() {
   const { data: session, isPending } = authClient.useSession();
@@ -71,7 +73,7 @@ export default function FollowersPage() {
   if (!session) {
     return (
       <p className="text-gray-700">
-        <Link to="/sign-in" className="font-medium text-violet-700 underline">
+        <Link to="/sign-in" className={textLink}>
           Sign in
         </Link>{" "}
         to see your followers.
@@ -81,15 +83,11 @@ export default function FollowersPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Followers</h1>
+      <FollowTabs />
+      <h1 className="mt-5 text-2xl font-bold">Followers</h1>
       <p className="mt-1 text-gray-600">
         Only you can see this list. Nobody else can see who follows you, or how
         many.
-      </p>
-      <p className="mt-2">
-        <Link to="/me/following" className="text-violet-700 underline">
-          People and clubs you follow
-        </Link>
       </p>
       {error && (
         <p role="alert" className="mt-4 text-red-600">
@@ -170,9 +168,7 @@ function PersonRow({
         onClick={onAction}
         disabled={busy}
         aria-label={`${action} ${person.name}`}
-        className={`min-h-11 shrink-0 rounded-lg border px-4 text-sm font-medium disabled:opacity-50 ${
-          danger ? "border-red-300 text-red-700" : "border-gray-300"
-        }`}
+        className={danger ? btnDanger : btnSecondary}
       >
         {busy ? "Saving…" : action}
       </button>

@@ -8,6 +8,7 @@ import {
 import { useEffect, useState } from "react";
 import { useLocation, useNavigationType, useSearchParams } from "react-router";
 import EventCard from "../components/EventCard";
+import { btnQuiet, btnSecondary } from "../lib/ui";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useViewer } from "../hooks/useViewer";
 import { categoryLabels } from "../lib/eventDisplay";
@@ -27,6 +28,9 @@ export default function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const tab = searchParams.get("tab") === "for-you" ? "for-you" : "all";
   const forYou = tab === "for-you" && !!viewer.user;
+  // On a ?tab=for-you link, wait for the session before loading anything, instead of
+  // briefly showing (and fetching) the public list and then switching.
+  const sessionPending = tab === "for-you" && viewer.pending;
   const scope = forYou ? viewer.user!.id : "public";
   const urlSearch = searchParams.get("q") ?? "";
   // Router navigation is a transition, so it cannot directly control a text
@@ -62,18 +66,22 @@ export default function HomePage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
+  // Compare trimmed text: adding a trailing space isn't a new search, so it must not
+  // jump back to page 1 or put "%20" in the URL.
   const waitingForSearch =
-    !forYou && (search.trim() !== debouncedSearch || search !== urlSearch);
+    !forYou &&
+    (search.trim() !== debouncedSearch || search.trim() !== urlSearch.trim());
 
   useEffect(() => {
-    if (search.trim() !== debouncedSearch || search === urlSearch) return;
+    const query = search.trim();
+    if (query !== debouncedSearch || query === urlSearch.trim()) return;
     // Commit the query and page reset together, and do not add a history entry
     // for every edit. Navigation to another URL resets the draft above first.
-    setDraft((current) => ({ ...current, committing: search }));
+    setDraft((current) => ({ ...current, committing: query }));
     setSearchParams(
       (previous) => {
         const next = new URLSearchParams(previous);
-        if (search) next.set("q", search);
+        if (query) next.set("q", query);
         else next.delete("q");
         next.delete("page");
         return next;
@@ -87,7 +95,7 @@ export default function HomePage() {
     setLoading(true);
     setError(null);
     // Ignore the old response immediately; don't send a partially typed query.
-    if (waitingForSearch)
+    if (waitingForSearch || sessionPending)
       return () => {
         ignore = true;
       };
@@ -115,7 +123,16 @@ export default function HomePage() {
     return () => {
       ignore = true;
     };
-  }, [debouncedSearch, category, page, retry, forYou, scope, waitingForSearch]);
+  }, [
+    debouncedSearch,
+    category,
+    page,
+    retry,
+    forYou,
+    scope,
+    waitingForSearch,
+    sessionPending,
+  ]);
 
   // Never retain personalized results after signing out or switching identities.
   const visible = result?.scope === scope ? result : null;
@@ -174,7 +191,7 @@ export default function HomePage() {
           ))}
         </div>
       )}
-      {!forYou && (
+      {!forYou && !sessionPending && (
         <>
           <label
             htmlFor="event-search"
@@ -235,7 +252,7 @@ export default function HomePage() {
             <button
               type="button"
               onClick={() => setRetry((value) => value + 1)}
-              className="mt-2 min-h-11 font-semibold text-violet-700 underline"
+              className={`mt-2 ${btnSecondary}`}
             >
               Try again
             </button>
@@ -263,7 +280,7 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={clearFilters}
-                    className="mt-2 min-h-11 font-semibold text-violet-700 underline"
+                    className={`mt-2 ${btnSecondary}`}
                   >
                     Clear filters
                   </button>
@@ -272,7 +289,7 @@ export default function HomePage() {
                   <button
                     type="button"
                     onClick={() => goToPage(0)}
-                    className="mt-2 block min-h-11 text-violet-700 underline"
+                    className={`mt-2 ${btnQuiet}`}
                   >
                     Back to first page
                   </button>

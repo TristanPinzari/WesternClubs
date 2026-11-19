@@ -1,6 +1,8 @@
 // WHAT: Load the event's own club before showing editing/cancellation controls.
 // WITHOUT IT: An unrelated club URL could accidentally determine the user's UI permissions.
 import { useCallback, useState } from "react";
+import { ArrowLeft } from "lucide-react";
+import { backLink } from "../lib/ui";
 import { Link, useNavigate, useParams } from "react-router";
 import EventForm from "../components/EventForm";
 import RequestState from "../components/RequestState";
@@ -53,11 +55,9 @@ function EventEditor({ id, slug }: { id?: string; slug?: string }) {
   return (
     <section>
       {state.data && (
-        <Link
-          className="inline-flex min-h-11 items-center text-violet-700 underline"
-          to={`/clubs/${state.data.club.slug}`}
-        >
-          ← {state.data.club.name}
+        <Link className={backLink} to={`/clubs/${state.data.club.slug}`}>
+          <ArrowLeft aria-hidden="true" />
+          {state.data.club.name}
         </Link>
       )}
       <h1 className="text-2xl font-bold">{id ? "Edit event" : "Post event"}</h1>

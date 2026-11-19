@@ -1,6 +1,8 @@
 // WHAT: Owner/admin settings, preserving the club slug when its name changes.
 // WITHOUT IT: Execs could not update club details or hand leadership to the next team.
+import { ArrowLeft } from "lucide-react";
 import { useCallback } from "react";
+import { backLink } from "../lib/ui";
 import { Link, useParams } from "react-router";
 import ClubForm from "../components/ClubForm";
 import ExecMembers from "../components/ExecMembers";
@@ -18,11 +20,9 @@ function ClubSettings({ slug }: { slug: string }) {
   const access = useClubAccess(state.data?.id);
   return (
     <section>
-      <Link
-        to={`/clubs/${slug}`}
-        className="inline-flex min-h-11 items-center text-violet-700 underline"
-      >
-        ← Club page
+      <Link to={`/clubs/${slug}`} className={backLink}>
+        <ArrowLeft aria-hidden="true" />
+        Club page
       </Link>
       <h1 className="text-2xl font-bold">Club settings</h1>
       <RequestState {...state} />

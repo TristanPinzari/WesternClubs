@@ -1,7 +1,16 @@
 // WHAT: The /events/:id page, using the same data source as the event feed.
 // WITHOUT IT: Clicking an event could not show its description or registration information.
 import type { EventDetail } from "@orbit/shared";
-import { useEffect, useState } from "react";
+import {
+  ArrowLeft,
+  CalendarDays,
+  ExternalLink,
+  MapPin,
+  Pencil,
+  ShieldCheck,
+  Ticket,
+} from "lucide-react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Link, useLocation, useParams } from "react-router";
 import {
   categoryLabels,
@@ -11,6 +20,7 @@ import {
   registrationLink,
 } from "../lib/eventDisplay";
 import EventAttendance from "../components/EventAttendance";
+import { btnSecondary } from "../lib/ui";
 import { getEvent, useMockEvents } from "../lib/events";
 import { useClubAccess } from "../hooks/useClubAccess";
 import { canPostEvent } from "../lib/execTypes";
@@ -68,9 +78,10 @@ export default function EventDetailPage() {
     <article>
       <Link
         to={backToEvents}
-        className="inline-flex min-h-11 items-center text-sm font-medium text-violet-700 underline"
+        className="-ml-1 inline-flex min-h-11 items-center gap-1.5 rounded-lg px-1 text-sm font-medium text-gray-600 hover:text-violet-700"
       >
-        ← Back to events
+        <ArrowLeft aria-hidden="true" className="h-4 w-4" />
+        Back to events
       </Link>
       {loading && (
         <p role="status" className="mt-4 text-gray-600">
@@ -87,7 +98,7 @@ export default function EventDetailPage() {
           <button
             type="button"
             onClick={() => setRetry((value) => value + 1)}
-            className="mt-2 min-h-11 font-semibold text-violet-700 underline"
+            className={`mt-3 ${btnSecondary}`}
           >
             Try again
           </button>
@@ -113,20 +124,28 @@ export default function EventDetailPage() {
               This event has ended.
             </p>
           )}
-          <p className="mt-5 text-sm font-semibold text-violet-700">
-            {categoryLabels[event.category]} ·{" "}
-            <Link to={`/clubs/${event.club.slug}`} className="underline">
+          <div className="mt-5 flex flex-wrap items-center gap-2 text-sm">
+            <span className="rounded-full bg-violet-50 px-2.5 py-0.5 font-medium text-violet-700">
+              {categoryLabels[event.category]}
+            </span>
+            <Link
+              to={`/clubs/${event.club.slug}`}
+              className="font-medium text-gray-700 hover:text-violet-700 hover:underline"
+            >
               {event.club.name}
             </Link>
-          </p>
-          <h1 className="mt-2 break-words text-3xl font-bold">{event.title}</h1>
+          </div>
+          <h1 className="mt-2 wrap-break-word text-3xl font-bold">
+            {event.title}
+          </h1>
           {!access.loading &&
             canPostEvent(access.role) &&
             !event.cancelledAt && (
               <Link
                 to={`/events/${event.id}/edit`}
-                className="mt-2 inline-flex min-h-11 items-center text-violet-700 underline"
+                className="mt-3 inline-flex min-h-11 items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 text-sm font-medium text-gray-700 hover:border-violet-300 hover:text-violet-700"
               >
+                <Pencil aria-hidden="true" className="h-4 w-4" />
                 Edit event
               </Link>
             )}
@@ -138,44 +157,32 @@ export default function EventDetailPage() {
             />
           )}
 
-          <dl className="mt-5 space-y-4 rounded-xl border border-gray-200 bg-white p-4 text-sm">
-            <div>
-              <dt className="font-semibold">When</dt>
-              <dd className="mt-1 text-gray-700">
-                <time dateTime={event.startsAt}>
-                  {formatEventDate(event.startsAt)} ·{" "}
-                  {formatEventTime(event.startsAt)}
-                </time>
-              </dd>
+          <dl className="mt-5 divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white text-sm">
+            <Detail icon={<CalendarDays />} label="When">
+              <time dateTime={event.startsAt}>
+                {formatEventDate(event.startsAt)} ·{" "}
+                {formatEventTime(event.startsAt)}
+              </time>
               {event.endsAt && (
-                <dd className="mt-1 text-gray-700">
+                <span className="block text-gray-500">
                   Until{" "}
                   <time dateTime={event.endsAt}>
                     {formatEventDate(event.endsAt)} ·{" "}
                     {formatEventTime(event.endsAt)}
                   </time>
-                </dd>
+                </span>
               )}
-            </div>
-            <div>
-              <dt className="font-semibold">Location</dt>
-              <dd className="mt-1 break-words text-gray-700">
-                {event.location || "Location to be announced"}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-semibold">Price</dt>
-              <dd className="mt-1 text-gray-700">
-                {formatPrice(event.priceCents)}
-              </dd>
-            </div>
-            <div>
-              <dt className="font-semibold">Eligibility</dt>
-              <dd className="mt-1 text-gray-700">
-                {event.eligibility ||
-                  "Contact the organizer for eligibility details."}
-              </dd>
-            </div>
+            </Detail>
+            <Detail icon={<MapPin />} label="Location">
+              {event.location || "Location to be announced"}
+            </Detail>
+            <Detail icon={<Ticket />} label="Price">
+              {formatPrice(event.priceCents)}
+            </Detail>
+            <Detail icon={<ShieldCheck />} label="Eligibility">
+              {event.eligibility ||
+                "Contact the organizer for eligibility details."}
+            </Detail>
           </dl>
 
           <h2 className="mt-6 text-xl font-semibold">About this event</h2>
@@ -190,9 +197,11 @@ export default function EventDetailPage() {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex min-h-11 items-center justify-center rounded-lg bg-violet-700 px-5 py-3 font-semibold text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-700"
+                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-violet-700 px-5 py-3 font-semibold text-white transition hover:bg-violet-800 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-700"
               >
-                Register<span className="sr-only"> (opens in a new tab)</span>
+                Register
+                <ExternalLink aria-hidden="true" className="h-4 w-4" />
+                <span className="sr-only"> (opens in a new tab)</span>
               </a>
             ) : (
               <p className="text-sm text-gray-600">
@@ -215,5 +224,33 @@ export default function EventDetailPage() {
         </>
       )}
     </article>
+  );
+}
+
+// One row of the event details box: an icon, a small label, and the value.
+// A <dl> row may only contain <dt> and <dd>, so the icon lives inside the <dt>, and the
+// <dd> is indented to line up under the label (icon width + gap = 2rem).
+function Detail({
+  icon,
+  label,
+  children,
+}: {
+  icon: ReactNode;
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="p-4">
+      <dt className="flex items-center gap-3 text-xs font-medium uppercase tracking-wide text-gray-500">
+        <span
+          aria-hidden="true"
+          className="shrink-0 text-violet-700 [&>svg]:h-5 [&>svg]:w-5"
+        >
+          {icon}
+        </span>
+        {label}
+      </dt>
+      <dd className="mt-0.5 wrap-break-word pl-8 text-gray-800">{children}</dd>
+    </div>
   );
 }

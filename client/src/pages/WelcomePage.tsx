@@ -8,22 +8,47 @@ import {
   type EventCategory,
 } from "@orbit/shared";
 import { useEffect, useState } from "react";
+import { btnQuiet, initialOf } from "../lib/ui";
 import { Link, useNavigate } from "react-router";
 import FollowClubButton from "../components/FollowClubButton";
 import { authClient } from "../lib/auth-client";
 import { listClubs } from "../lib/clubs";
 import { categoryLabels } from "../lib/eventDisplay";
-import { saveMyProfile } from "../lib/profiles";
+import { getProfile, saveMyProfile } from "../lib/profiles";
 
 export default function WelcomePage() {
   const navigate = useNavigate();
-  const { data: session, isPending } = authClient.useSession();
+  const { data: session, isPending, isRefetching } = authClient.useSession();
   const [step, setStep] = useState<"interests" | "clubs">("interests");
   const [interests, setInterests] = useState<EventCategory[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  if (isPending) return null;
+  // Start from the interests already on your profile, so coming back to /welcome (or
+  // refreshing mid-onboarding) never wipes them when you press Continue. If you've
+  // already started picking before this loads, your picks win.
+  const userId = session?.user.id;
+  useEffect(() => {
+    if (!userId) return;
+    let ignore = false;
+    getProfile(userId)
+      .then((profile) => {
+        if (!ignore)
+          setInterests((current) =>
+            current.length === 0 ? profile.interests : current,
+          );
+      })
+      .catch(() => {
+        // Not fatal: you can still pick interests from scratch.
+      });
+    return () => {
+      ignore = true;
+    };
+  }, [userId]);
+
+  // Right after sign-up the session is still being fetched. Wait for it instead of
+  // briefly telling a brand-new user to "sign in".
+  if (isPending || (isRefetching && !session)) return null;
   if (!session) {
     return (
       <p className="text-gray-700">
@@ -109,7 +134,7 @@ export default function WelcomePage() {
             <button
               type="button"
               onClick={() => setStep("clubs")}
-              className="min-h-11 text-gray-600 underline"
+              className={btnQuiet}
             >
               Skip
             </button>
@@ -174,7 +199,7 @@ function ClubPicker() {
               aria-hidden="true"
               className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg bg-violet-100 font-semibold text-violet-800"
             >
-              {club.name.charAt(0)}
+              {initialOf(club.name)}
             </span>
           )}
           <div className="min-w-0 flex-1">

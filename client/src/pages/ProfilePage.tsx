@@ -6,11 +6,12 @@ import type { Profile } from "@orbit/shared";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import Avatar from "../components/Avatar";
+import SocialLinks, { socialLinkItems } from "../components/SocialLinks";
+import { btnDanger } from "../lib/ui";
 import { authClient } from "../lib/auth-client";
 import { categoryLabels } from "../lib/eventDisplay";
 import {
   getProfile,
-  linkLabels,
   setBlocked,
   setFollowing,
   yearLabel,
@@ -67,10 +68,7 @@ export default function ProfilePage() {
   if (!profile) return <p className="text-gray-600">Loading…</p>;
 
   const isMe = profile.userId === me.id;
-  const links = Object.entries(profile.links) as [
-    keyof typeof linkLabels,
-    string,
-  ][];
+  const links = socialLinkItems(profile.links);
 
   async function toggleFollow() {
     if (!profile) return;
@@ -171,7 +169,7 @@ export default function ProfilePage() {
               type="button"
               onClick={block}
               disabled={followBusy}
-              className="min-h-11 px-2 text-sm text-red-700 underline disabled:opacity-50"
+              className={btnDanger}
             >
               Block
             </button>
@@ -209,22 +207,7 @@ export default function ProfilePage() {
       {links.length > 0 && (
         <section className="mt-6">
           <h2 className="text-sm font-semibold text-gray-700">Links</h2>
-          <ul className="mt-2 flex flex-wrap gap-4">
-            {links.map(([key, url]) => (
-              <li key={key}>
-                {/* The API only accepts http(s) links, so these are safe to open. */}
-                <a
-                  href={url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center font-medium text-violet-700 underline"
-                >
-                  {linkLabels[key]}
-                  <span className="sr-only"> (opens in a new tab)</span>
-                </a>
-              </li>
-            ))}
-          </ul>
+          <SocialLinks links={profile.links} className="mt-2" />
         </section>
       )}
 

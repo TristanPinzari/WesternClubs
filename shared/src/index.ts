@@ -269,6 +269,7 @@ export type UpdateEventInput = z.infer<typeof updateEventSchema>;
 export const LINK_KINDS = [
   "website",
   "instagram",
+  "linktree",
   "linkedin",
   "discord",
   "github",
@@ -285,6 +286,7 @@ const optionalLink = emptyAsUndefined(httpUrl.optional()); // "" = no link
 export const linksSchema = z.object({
   website: optionalLink,
   instagram: optionalLink,
+  linktree: optionalLink,
   linkedin: optionalLink,
   discord: optionalLink,
   github: optionalLink,

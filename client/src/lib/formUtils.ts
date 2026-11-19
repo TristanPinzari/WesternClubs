@@ -1,10 +1,11 @@
 // WHAT: Form validation and date/money conversion, independent of React and the DB.
 // WITHOUT IT: Forms could submit fractional cents, invalid dates, or unsafe links.
 import { registrationLink } from "./eventDisplay";
+import { btnPrimary } from "./ui";
 export const inputClass =
-  "mt-1 min-h-11 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-2";
-export const buttonClass =
-  "min-h-11 rounded-lg bg-violet-700 px-4 py-2 font-semibold text-white disabled:opacity-50";
+  "mt-1 min-h-11 w-full min-w-0 rounded-lg border border-gray-300 bg-white px-3 py-2 transition focus:border-violet-400 focus:outline-none focus:ring-2 focus:ring-violet-100";
+// Form submit buttons use the app's primary button style (lib/ui.ts).
+export const buttonClass = btnPrimary;
 
 export function priceToCents(value: string) {
   if (!/^\d+(\.\d{1,2})?$/.test(value.trim()))

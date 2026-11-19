@@ -5,7 +5,35 @@
 */
 @import "tailwindcss";
 
+/*
+  Orbit's accent colour is Western purple (#4F2683, the 700 shade). The app's classes
+  say "violet", so redefining the violet scale here re-colours every button, link, and
+  badge at once. To change the accent, change it here, not in each component.
+*/
+@theme {
+  --color-violet-50: #f6f3fb;
+  --color-violet-100: #ece6f6;
+  --color-violet-200: #d9cdee;
+  --color-violet-300: #bca7df;
+  --color-violet-400: #9577c9;
+  --color-violet-500: #7350b1;
+  --color-violet-600: #5d3497;
+  --color-violet-700: #4f2683;
+  --color-violet-800: #3f1e69;
+  --color-violet-900: #2e164d;
+}
+
 /* Reserve scrollbar width so loading results never shift the centered layout. */
 html {
   scrollbar-gutter: stable;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+h1,
+h2 {
+  letter-spacing: -0.01em;
 }

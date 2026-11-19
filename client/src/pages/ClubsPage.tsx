@@ -3,9 +3,11 @@
 // WITHOUT IT: The Clubs tab would show nothing, and the team would lose its working
 //   reference for how a page talks to the API.
 import type { ClubSummary } from "@orbit/shared";
+import { ChevronRight, Plus, ShieldCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { listClubs } from "../lib/clubs";
+import { btnPrimary, btnSecondary, initialOf } from "../lib/ui";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 
 export default function ClubsPage() {
@@ -36,14 +38,18 @@ export default function ClubsPage() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold">Clubs</h1>
-      <div className="mt-3 flex flex-wrap gap-4 text-violet-700 underline">
-        <Link to="/clubs/new" className="inline-flex min-h-11 items-center">
-          Create a club
-        </Link>
-        <Link to="/me/clubs" className="inline-flex min-h-11 items-center">
-          My clubs
-        </Link>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold">Clubs</h1>
+        <div className="flex flex-wrap gap-2">
+          <Link to="/me/clubs" className={btnSecondary}>
+            <ShieldCheck aria-hidden="true" />
+            My clubs
+          </Link>
+          <Link to="/clubs/new" className={btnPrimary}>
+            <Plus aria-hidden="true" />
+            Create a club
+          </Link>
+        </div>
       </div>
 
       <label htmlFor="club-search" className="sr-only">
@@ -65,24 +71,41 @@ export default function ClubsPage() {
 
       <ul className="mt-4 space-y-3">
         {clubs.map((club) => (
-          <li
-            key={club.id}
-            className="rounded-xl border border-gray-200 bg-white p-4"
-          >
+          <li key={club.id}>
+            {/* The whole card is the link, like the event cards. */}
             <Link
               to={`/clubs/${club.slug}`}
-              className="flex min-h-11 items-center gap-3 font-semibold text-violet-700 underline"
+              className="group flex items-center gap-4 rounded-xl border border-gray-200 bg-white p-4 transition hover:border-violet-300 hover:shadow-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-700"
             >
-              {club.logoUrl && (
+              {club.logoUrl ? (
                 <img
                   src={club.logoUrl}
                   alt=""
-                  className="h-10 w-10 rounded-full object-cover"
+                  className="h-12 w-12 shrink-0 rounded-xl border border-gray-200 object-cover"
                 />
+              ) : (
+                <span
+                  aria-hidden="true"
+                  className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-violet-100 text-lg font-bold text-violet-700"
+                >
+                  {initialOf(club.name)}
+                </span>
               )}
-              <h2>{club.name}</h2>
+              <div className="min-w-0 flex-1">
+                <h2 className="font-semibold group-hover:text-violet-800">
+                  {club.name}
+                </h2>
+                {club.description && (
+                  <p className="mt-0.5 line-clamp-2 text-sm text-gray-600">
+                    {club.description}
+                  </p>
+                )}
+              </div>
+              <ChevronRight
+                aria-hidden="true"
+                className="h-5 w-5 shrink-0 text-gray-300 group-hover:text-violet-500"
+              />
             </Link>
-            <p className="mt-1 text-sm text-gray-600">{club.description}</p>
           </li>
         ))}
       </ul>

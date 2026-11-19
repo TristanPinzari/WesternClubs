@@ -10,9 +10,11 @@ import {
   type LinkKind,
   type Profile,
 } from "@orbit/shared";
+import { Trash2, UserRound } from "lucide-react";
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import Avatar from "../components/Avatar";
+import { btnQuiet, btnSecondary } from "../lib/ui";
 import ImageUpload from "../components/ImageUpload";
 import { authClient } from "../lib/auth-client";
 import { categoryLabels } from "../lib/eventDisplay";
@@ -55,7 +57,12 @@ export default function EditProfilePage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [pictureBusy, setPictureBusy] = useState(false);
+  // Two separate flags: the upload itself, and saving the uploaded URL on the account.
+  // Sharing one let the upload finishing re-enable the buttons while the save was still
+  // running, so a quick "Remove picture" could race it.
+  const [uploading, setUploading] = useState(false);
+  const [savingPicture, setSavingPicture] = useState(false);
+  const pictureBusy = uploading || savingPicture;
   const [pictureError, setPictureError] = useState<string | null>(null);
 
   const user = session?.user;
@@ -94,7 +101,7 @@ export default function EditProfilePage() {
   // so it saves right away instead of waiting for "Save profile". null removes it.
   // The server only accepts URLs from our own uploads, in your own users/ folder.
   async function savePicture(url: string | null) {
-    setPictureBusy(true);
+    setSavingPicture(true);
     setPictureError(null);
     try {
       const { error } = await authClient.updateUser({ image: url });
@@ -103,7 +110,7 @@ export default function EditProfilePage() {
     } catch {
       setPictureError("Couldn't reach the server. Try again.");
     } finally {
-      setPictureBusy(false);
+      setSavingPicture(false);
     }
   }
 
@@ -160,10 +167,8 @@ export default function EditProfilePage() {
     <div>
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">Edit profile</h1>
-        <Link
-          to={`/profile/${user.id}`}
-          className="text-sm font-medium text-violet-700 underline"
-        >
+        <Link to={`/profile/${user.id}`} className={btnSecondary}>
+          <UserRound aria-hidden="true" />
           View profile
         </Link>
       </div>
@@ -182,15 +187,17 @@ export default function EditProfilePage() {
                 folder="users"
                 label="Profile picture"
                 onChange={(image) => image && savePicture(image.publicUrl)}
-                onBusyChange={setPictureBusy}
+                onBusyChange={setUploading}
+                disabled={savingPicture}
               />
               {user.image && (
                 <button
                   type="button"
                   disabled={pictureBusy}
                   onClick={() => savePicture(null)}
-                  className="min-h-11 text-sm text-gray-600 underline disabled:opacity-50"
+                  className={btnQuiet}
                 >
+                  <Trash2 aria-hidden="true" />
                   Remove picture
                 </button>
               )}

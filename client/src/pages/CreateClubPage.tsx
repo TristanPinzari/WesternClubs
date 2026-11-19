@@ -1,5 +1,7 @@
 // WHAT: Signed-in club creation with redirect to the slug returned by the server.
 // WITHOUT IT: Execs would need a database tool to start a club.
+import { ArrowLeft } from "lucide-react";
+import { backLink, textLink } from "../lib/ui";
 import { Link, useNavigate } from "react-router";
 import ClubForm from "../components/ClubForm";
 import RequestState from "../components/RequestState";
@@ -10,17 +12,15 @@ export default function CreateClubPage() {
   const navigate = useNavigate();
   return (
     <section>
-      <Link
-        to="/clubs"
-        className="inline-flex min-h-11 items-center text-violet-700 underline"
-      >
-        ← Clubs
+      <Link to="/clubs" className={backLink}>
+        <ArrowLeft aria-hidden="true" />
+        Clubs
       </Link>
       <h1 className="text-2xl font-bold">Create a club</h1>
       <RequestState loading={viewer.pending} error={viewer.error} />
       {!viewer.pending && !viewer.user && (
         <p className="mt-4">
-          <Link to="/sign-in" className="text-violet-700 underline">
+          <Link to="/sign-in" className={textLink}>
             Sign in
           </Link>{" "}
           to create a club.

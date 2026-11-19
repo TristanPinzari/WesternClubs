@@ -1,7 +1,14 @@
 // WHAT: The app's shell: the header/nav that appears on every page, plus the list of
 //   routes (which URL shows which page). Add new pages to <Routes> here.
 // WITHOUT IT: There'd be no navigation, and no URL would show any page.
-import { NavLink, Route, Routes } from "react-router";
+import {
+  Building2,
+  Compass,
+  Orbit as OrbitIcon,
+  ShieldCheck,
+  UsersRound,
+} from "lucide-react";
+import { Link, NavLink, Route, Routes } from "react-router";
 import UserMenu from "./components/UserMenu";
 import ClubsPage from "./pages/ClubsPage";
 import EditProfilePage from "./pages/EditProfilePage";
@@ -22,33 +29,72 @@ import EventEditorPage from "./pages/EventEditorPage";
 import MyClubsPage from "./pages/MyClubsPage";
 import { useMockExec } from "./lib/demoMode";
 
+// Top nav (768px and up): centred text links.
 const navLinkClass = ({ isActive }: { isActive: boolean }) =>
-  isActive ? "font-semibold text-violet-700" : "text-gray-600";
+  `flex min-h-11 items-center rounded-lg px-3 text-sm font-medium transition ${
+    isActive
+      ? "bg-violet-50 text-violet-700"
+      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
+  }`;
+
+// Bottom tab bar (phones): icon above a short label, like a mobile app.
+const tabLinkClass = ({ isActive }: { isActive: boolean }) =>
+  `flex flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium ${
+    isActive ? "text-violet-700" : "text-gray-500"
+  }`;
+
+// The same four destinations appear in the top nav on wider screens and in the bottom
+// tab bar on phones.
+const NAV = [
+  { to: "/", label: "Events", Icon: Compass, end: true },
+  { to: "/clubs", label: "Clubs", Icon: Building2, end: false },
+  { to: "/people", label: "People", Icon: UsersRound, end: false },
+  { to: "/me/clubs", label: "My clubs", Icon: ShieldCheck, end: false },
+];
 
 export default function App() {
   return (
     <div className="min-h-screen bg-gray-50 text-gray-900">
-      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white">
-        <nav className="mx-auto flex max-w-2xl flex-wrap items-center gap-x-5 gap-y-2 px-4 py-3">
-          <span className="text-lg font-bold text-violet-700">Orbit</span>
-          <NavLink to="/" end className={navLinkClass}>
-            Events
-          </NavLink>
-          <NavLink to="/me/clubs" className={navLinkClass}>
-            My clubs
-          </NavLink>
-          <NavLink to="/clubs" className={navLinkClass}>
-            Clubs
-          </NavLink>
-          <NavLink to="/people" className={navLinkClass}>
-            People
-          </NavLink>
+      <header className="sticky top-0 z-10 border-b border-gray-200 bg-white/95 backdrop-blur">
+        {/* Three columns: logo left, links centred, account right. The two outer
+            columns are equal width (1fr), which is what keeps the links truly centred. */}
+        <nav className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-2.5 md:grid md:grid-cols-[1fr_auto_1fr]">
+          <Link
+            to="/"
+            className="flex items-center gap-1.5 justify-self-start text-lg font-bold text-violet-700"
+          >
+            <OrbitIcon aria-hidden="true" className="h-6 w-6" />
+            Orbit
+          </Link>
+          <div className="hidden items-center gap-1 md:flex">
+            {NAV.map(({ to, label, end }) => (
+              <NavLink key={to} to={to} end={end} className={navLinkClass}>
+                {label}
+              </NavLink>
+            ))}
+          </div>
           {/* Demo identities never call real auth; live mode uses Rokyo's merged menu. */}
-          {!useMockExec && <UserMenu />}
+          <div className="flex min-w-0 justify-end">
+            {!useMockExec && <UserMenu />}
+          </div>
         </nav>
       </header>
 
-      <main className="mx-auto max-w-2xl px-4 py-6">
+      {/* Phones: the main destinations live in a bottom tab bar, within thumb reach. */}
+      <nav
+        aria-label="Main"
+        className="fixed inset-x-0 bottom-0 z-10 grid grid-cols-4 border-t border-gray-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden"
+      >
+        {NAV.map(({ to, label, Icon, end }) => (
+          <NavLink key={to} to={to} end={end} className={tabLinkClass}>
+            <Icon aria-hidden="true" className="h-5 w-5" />
+            {label}
+          </NavLink>
+        ))}
+      </nav>
+
+      {/* Extra bottom padding on phones so the tab bar never covers the last item. */}
+      <main className="mx-auto max-w-2xl px-4 pt-6 pb-24 md:pb-6">
         <Routes>
           <Route path="/" element={<HomePage />} />
           <Route path="/clubs" element={<ClubsPage />} />

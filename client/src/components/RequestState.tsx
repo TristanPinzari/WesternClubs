@@ -1,5 +1,8 @@
 // WHAT: Shared accessible loading/error messages and retry for the exec pages.
 // WITHOUT IT: A failed dependency would leave a blank page or a silent form.
+import { RotateCw } from "lucide-react";
+import { btnSecondary } from "../lib/ui";
+
 export default function RequestState({
   loading,
   error,
@@ -26,8 +29,9 @@ export default function RequestState({
             <button
               type="button"
               onClick={retry}
-              className="min-h-11 underline"
+              className={`mt-2 ${btnSecondary}`}
             >
+              <RotateCw aria-hidden="true" />
               Try again
             </button>
           )}

@@ -54,6 +54,7 @@ export const setBlocked = (userId: string, block: boolean) =>
 // Typed by LinkKind, so adding a link kind in shared makes TypeScript ask for a label.
 export const linkLabels: Record<LinkKind, string> = {
   instagram: "Instagram",
+  linktree: "Linktree",
   linkedin: "LinkedIn",
   github: "GitHub",
   discord: "Discord",

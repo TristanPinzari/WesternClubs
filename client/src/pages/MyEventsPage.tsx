@@ -2,11 +2,13 @@
 //   Going, Interested, and Past. Data comes from GET /api/me/events.
 // WITHOUT IT: Students would have no single place to see what they've signed up for.
 import type { MyEvent, MyEvents } from "@orbit/shared";
+import { Compass, UserCheck, UserRound, UsersRound } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { apiGet } from "../lib/api";
 import { authClient } from "../lib/auth-client";
 import { formatEventTime } from "../lib/eventDisplay";
+import { btnPrimary, btnSecondary, textLink } from "../lib/ui";
 
 // The small calendar block ("FRI / Nov 20") needs a shorter date than
 // formatEventDate gives, so it has its own formatter, using the same time zone rule
@@ -41,7 +43,7 @@ export default function MyEventsPage() {
       <div>
         <h1 className="text-2xl font-bold">My events</h1>
         <p className="mt-2 text-gray-700">
-          <Link to="/sign-in" className="font-medium text-violet-700 underline">
+          <Link to="/sign-in" className={textLink}>
             Sign in
           </Link>{" "}
           to see the events you're going to.
@@ -57,34 +59,31 @@ export default function MyEventsPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between gap-4">
-        <h1 className="text-2xl font-bold">My events</h1>
-        <div className="flex shrink-0 gap-4 text-sm font-medium">
-          <Link to="/me/following" className="text-violet-700 underline">
-            Following
-          </Link>
-          <Link to="/me/followers" className="text-violet-700 underline">
-            Followers
-          </Link>
-          <Link
-            to={`/profile/${session.user.id}`}
-            className="text-violet-700 underline"
-          >
-            My profile
-          </Link>
-        </div>
+      <h1 className="text-2xl font-bold">My events</h1>
+      {/* Your account hub: the header avatar opens this page. */}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Link to={`/profile/${session.user.id}`} className={btnSecondary}>
+          <UserRound aria-hidden="true" />
+          My profile
+        </Link>
+        <Link to="/me/following" className={btnSecondary}>
+          <UserCheck aria-hidden="true" />
+          Following
+        </Link>
+        <Link to="/me/followers" className={btnSecondary}>
+          <UsersRound aria-hidden="true" />
+          Followers
+        </Link>
       </div>
 
       {error && <p className="mt-4 text-red-600">{error}</p>}
       {!data && !error && <p className="mt-4 text-gray-600">Loading…</p>}
 
       {data && data.upcoming.length === 0 && (
-        <div className="mt-4 rounded-xl border border-dashed border-gray-300 p-4">
+        <div className="mt-6 rounded-xl border border-dashed border-gray-300 p-5 text-center">
           <p className="text-gray-700">You have no upcoming events yet.</p>
-          <Link
-            to="/"
-            className="mt-2 inline-flex min-h-11 items-center font-medium text-violet-700 underline"
-          >
+          <Link to="/" className={`mt-3 ${btnPrimary}`}>
+            <Compass aria-hidden="true" />
             Browse events
           </Link>
         </div>
