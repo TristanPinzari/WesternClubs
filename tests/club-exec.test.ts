@@ -81,7 +81,7 @@ test("merged shared contracts require upload size and accept only supported club
   );
 });
 
-test("feed query parameterizes identity/pagination and uses only merged signals", () => {
+test("feed query parameterizes identity/pagination and includes public followed RSVPs", () => {
   const identity = "a'; DROP TABLE event; --";
   const compiled = new PgDialect().sqlToQuery(
     feedQuery(identity, 12, 24, "https://example.org/"),
@@ -90,7 +90,7 @@ test("feed query parameterizes identity/pagination and uses only merged signals"
   assert.ok(compiled.params.includes(identity));
   assert.match(compiled.sql, /ORDER BY score DESC, starts_at, id/);
   assert.match(compiled.sql, /cancelled_at IS NULL/);
-  assert.doesNotMatch(compiled.sql, /event_rsvp|followed_user/);
+  assert.match(compiled.sql, /WHEN 2 THEN 'followed_user'/);
   assert.deepEqual(feedListQuerySchema.parse({ limit: "", offset: "" }), {
     limit: 20,
     offset: 0,
@@ -207,5 +207,28 @@ test("anonymous, private-profile, and non-followed RSVPs do not influence feed",
       0,
     );
     assert.equal(result[0].reason, null);
+  }
+});
+
+test("demo privacy matches production for missing profiles and silent blocks", () => {
+  const event = { ...mockEvents[0], startsAt: "2099-12-01T22:00:00Z" };
+  for (const blockedViewer of [false, true]) {
+    const result = rankDemoFeed(
+      [event],
+      new Set(),
+      new Set(["friend"]),
+      [],
+      [
+        {
+          eventId: event.id,
+          userId: "friend",
+          status: "going",
+          showOnAttendeeList: true,
+          isPublic: null,
+          blockedViewer,
+        },
+      ],
+    );
+    assert.equal(result[0].reason, blockedViewer ? null : "followed_user");
   }
 });

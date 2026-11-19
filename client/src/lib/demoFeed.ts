@@ -1,6 +1,6 @@
 // WHAT: A pure ranking model for frontend fixtures, matching docs/API.md.
 // WITHOUT IT: The mock feed could teach the wrong ordering or expose anonymous RSVPs.
-// This is NOT the production SQL endpoint; that waits for teammates' actual tables.
+// Production ranking lives in server/src/queries/feed.ts.
 import type { EventCategory, EventDetail } from "@orbit/shared";
 import type { FeedEvent, FeedReason } from "./execTypes";
 
@@ -9,7 +9,8 @@ export interface DemoRsvp {
   userId: string;
   status: "going" | "interested";
   showOnAttendeeList: boolean;
-  isPublic: boolean;
+  isPublic: boolean | null;
+  blockedViewer?: boolean;
 }
 const scores = { followed_club: 3, followed_user: 2, interest: 1 };
 export function rankDemoFeed(
@@ -30,7 +31,8 @@ export function rankDemoFeed(
                 rsvp.eventId === event.id &&
                 users.has(rsvp.userId) &&
                 rsvp.showOnAttendeeList &&
-                rsvp.isPublic,
+                rsvp.isPublic !== false &&
+                !rsvp.blockedViewer,
             )
           ? "followed_user"
           : interests.includes(event.category)

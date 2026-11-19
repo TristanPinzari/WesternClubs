@@ -2,7 +2,7 @@
 // WITHOUT IT: Clicking an event could not show its description or registration information.
 import type { EventDetail } from "@orbit/shared";
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router";
+import { Link, useLocation, useParams } from "react-router";
 import {
   categoryLabels,
   formatEventDate,
@@ -17,6 +17,13 @@ import { canPostEvent } from "../lib/execTypes";
 
 export default function EventDetailPage() {
   const { id } = useParams();
+  const location = useLocation();
+  // Only carry a query string, never a caller-controlled destination URL.
+  const feedSearch = location.state?.feedSearch;
+  const backToEvents =
+    typeof feedSearch === "string" && feedSearch.startsWith("?")
+      ? `/${feedSearch}`
+      : "/";
   const [event, setEvent] = useState<EventDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -60,7 +67,7 @@ export default function EventDetailPage() {
   return (
     <article>
       <Link
-        to="/"
+        to={backToEvents}
         className="inline-flex min-h-11 items-center text-sm font-medium text-violet-700 underline"
       >
         ← Back to events

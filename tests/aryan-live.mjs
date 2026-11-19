@@ -357,9 +357,88 @@ try {
     feed.items.some((item) => item.id === event.id),
     false,
   );
-  assert.equal(
-    feed.items.some((item) => item.reason === "followed_user"),
-    false,
+  // Two real signed-in actors: A (student) follows B (member). Keep this
+  // fixture in an unfollowed club, so score 3 cannot mask privacy transitions.
+  await call(
+    student.context,
+    "PUT",
+    `/users/${member.id}/follow`,
+    undefined,
+    204,
+  );
+  const friendRsvp = (showOnAttendeeList) =>
+    call(member.context, "PUT", `/events/${neutralEvent.id}/rsvp`, {
+      status: "going",
+      showOnAttendeeList,
+    });
+  const checkFriendRank = async (promoted) => {
+    const result = await call(student.context, "GET", "/feed?limit=100");
+    const friendIndex = result.items.findIndex(
+      (item) => item.id === neutralEvent.id,
+    );
+    const interestIndex = result.items.findIndex(
+      (item) => item.id === interestEvent.id,
+    );
+    const clubIndex = result.items.findIndex(
+      (item) => item.id === followedEvent.id,
+    );
+    assert.ok(friendIndex >= 0 && interestIndex >= 0 && clubIndex >= 0);
+    assert.equal(
+      result.items[friendIndex].reason,
+      promoted ? "followed_user" : null,
+    );
+    assert.equal(friendIndex < interestIndex, promoted);
+    assert.ok(clubIndex < friendIndex);
+    assert.equal(result.total, feed.total);
+    assert.ok(
+      result.items.every(
+        (item) => !("attendees" in item) && !("userId" in item),
+      ),
+    );
+  };
+  await friendRsvp(true);
+  await checkFriendRank(true);
+  await friendRsvp(false);
+  await checkFriendRank(false);
+  await friendRsvp(true);
+  await checkFriendRank(true);
+  await call(member.context, "PUT", "/me/profile", { isPublic: false });
+  await checkFriendRank(false);
+  await call(member.context, "PUT", "/me/profile", { isPublic: true });
+  // Main removes followers when a profile goes private; re-follow explicitly.
+  await call(
+    student.context,
+    "PUT",
+    `/users/${member.id}/follow`,
+    undefined,
+    204,
+  );
+  await checkFriendRank(true);
+  await call(
+    member.context,
+    "PUT",
+    `/users/${student.id}/block`,
+    undefined,
+    204,
+  );
+  await checkFriendRank(false);
+  await call(
+    member.context,
+    "DELETE",
+    `/users/${student.id}/block`,
+    undefined,
+    204,
+  );
+  await call(
+    student.context,
+    "PUT",
+    `/users/${member.id}/follow`,
+    undefined,
+    204,
+  );
+  await checkFriendRank(true);
+  passed(
+    "two-account public RSVP boost, anonymous/private/blocked demotion and recovery",
   );
   const first = await call(student.context, "GET", "/feed?limit=2");
   const second = await call(student.context, "GET", "/feed?limit=2&offset=2");

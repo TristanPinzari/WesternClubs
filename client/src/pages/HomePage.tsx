@@ -2,11 +2,11 @@
 // WITHOUT IT: Students cannot find events. Keep the last successful page while updating.
 import {
   EVENT_CATEGORIES,
-  type EventCategory,
   type EventSummary,
   type Paginated,
 } from "@orbit/shared";
 import { useEffect, useState } from "react";
+import { useLocation, useNavigationType, useSearchParams } from "react-router";
 import EventCard from "../components/EventCard";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useViewer } from "../hooks/useViewer";
@@ -22,26 +22,65 @@ type FeedResult = Paginated<EventSummary | FeedEvent> & {
 
 export default function HomePage() {
   const viewer = useViewer();
-  const [tab, setTab] = useState<"all" | "for-you">("all");
+  const location = useLocation();
+  const navigationType = useNavigationType();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const tab = searchParams.get("tab") === "for-you" ? "for-you" : "all";
   const forYou = tab === "for-you" && !!viewer.user;
   const scope = forYou ? viewer.user!.id : "public";
-  const [search, setSearch] = useState("");
+  const urlSearch = searchParams.get("q") ?? "";
+  // Router navigation is a transition, so it cannot directly control a text
+  // input without dropping fast keystrokes. Keep a synchronous typing draft;
+  // the URL remains the committed filter and wins on Back/Forward navigation.
+  const [draft, setDraft] = useState<{
+    key: string;
+    value: string;
+    committing?: string;
+  }>({ key: location.key, value: urlSearch });
+  // Acknowledging our own replace must not erase text typed while that router
+  // transition was pending. POP/PUSH navigation always restores the URL instead.
+  const ownSearchCommit =
+    navigationType === "REPLACE" && draft.committing === urlSearch;
+  const search =
+    draft.key === location.key || ownSearchCommit ? draft.value : urlSearch;
+  if (draft.key !== location.key)
+    setDraft({ key: location.key, value: search });
   const debouncedSearch = useDebouncedValue(search.trim());
-  const [category, setCategory] = useState<EventCategory | "">("");
-  // Tie pagination to the applied filters. Resetting on every keystroke would
-  // accidentally fetch page one of the OLD search before the debounce finishes.
-  const filterKey = JSON.stringify([
-    scope,
-    forYou ? "" : debouncedSearch,
-    forYou ? "" : category,
-  ]);
-  const [pagination, setPagination] = useState({ key: filterKey, page: 0 });
-  const page = pagination.key === filterKey ? pagination.page : 0;
+  const rawCategory = searchParams.get("category");
+  const category =
+    EVENT_CATEGORIES.find((value) => value === rawCategory) ?? "";
+  // URLs use one-based pages. Invalid links fall back to the first page.
+  const rawPage = searchParams.get("page") ?? "1";
+  const pageNumber = Number(rawPage);
+  const page =
+    /^[1-9]\d*$/.test(rawPage) &&
+    Number.isSafeInteger(pageNumber) &&
+    Number.isSafeInteger((pageNumber - 1) * PAGE_SIZE)
+      ? pageNumber - 1
+      : 0;
   const [result, setResult] = useState<FeedResult | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retry, setRetry] = useState(0);
-  const waitingForSearch = !forYou && search.trim() !== debouncedSearch;
+  const waitingForSearch =
+    !forYou && (search.trim() !== debouncedSearch || search !== urlSearch);
+
+  useEffect(() => {
+    if (search.trim() !== debouncedSearch || search === urlSearch) return;
+    // Commit the query and page reset together, and do not add a history entry
+    // for every edit. Navigation to another URL resets the draft above first.
+    setDraft((current) => ({ ...current, committing: search }));
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        if (search) next.set("q", search);
+        else next.delete("q");
+        next.delete("page");
+        return next;
+      },
+      { replace: true },
+    );
+  }, [search, debouncedSearch, urlSearch, setSearchParams]);
 
   useEffect(() => {
     let ignore = false;
@@ -81,12 +120,24 @@ export default function HomePage() {
   // Never retain personalized results after signing out or switching identities.
   const visible = result?.scope === scope ? result : null;
   const updating = loading || waitingForSearch;
+  function updateFilters(values: Record<string, string>, replace = false) {
+    setSearchParams(
+      (previous) => {
+        const next = new URLSearchParams(previous);
+        for (const [key, value] of Object.entries(values)) {
+          if (value) next.set(key, value);
+          else next.delete(key);
+        }
+        return next;
+      },
+      { replace },
+    );
+  }
   const goToPage = (next: number) =>
-    setPagination({ key: filterKey, page: next });
+    updateFilters({ page: next > 0 ? String(next + 1) : "" });
   function clearFilters() {
-    setSearch("");
-    setCategory("");
-    goToPage(0);
+    setDraft({ key: location.key, value: "" });
+    updateFilters({ q: "", category: "", page: "" });
   }
 
   return (
@@ -114,8 +165,7 @@ export default function HomePage() {
               type="button"
               aria-pressed={tab === value}
               onClick={() => {
-                setTab(value);
-                setPagination({ key: "", page: 0 });
+                updateFilters({ tab: value, q: search, page: "" });
               }}
               className={`min-h-11 rounded-lg px-4 py-2 ${tab === value ? "bg-violet-700 text-white" : "bg-white ring-1 ring-gray-300"}`}
             >
@@ -138,9 +188,8 @@ export default function HomePage() {
             placeholder="Search events, clubs, or topics"
             value={search}
             onChange={(e) => {
-              setSearch(e.target.value);
-              if (e.target.value.trim() !== search.trim())
-                setPagination({ key: "", page: 0 });
+              const value = e.target.value;
+              setDraft((current) => ({ ...current, key: location.key, value }));
             }}
             className="mt-2 min-h-11 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 focus-visible:outline-2 focus-visible:outline-violet-700"
           />
@@ -155,8 +204,7 @@ export default function HomePage() {
                 type="button"
                 aria-pressed={category === item}
                 onClick={() => {
-                  setCategory(item);
-                  setPagination({ key: "", page: 0 });
+                  updateFilters({ category: item, q: search, page: "" });
                 }}
                 className={`min-h-11 rounded-full px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-700 ${category === item ? "bg-violet-700 text-white" : "bg-white text-gray-700 ring-1 ring-gray-300"}`}
               >
@@ -198,9 +246,11 @@ export default function HomePage() {
             <p role="status" className="mb-3 text-sm text-gray-600">
               {error
                 ? "Showing the last successful results."
-                : visible.total === 0
+                : visible.items.length === 0
                   ? !updating
-                    ? "No events found."
+                    ? visible.total === 0
+                      ? "No events found."
+                      : "No events found on this page."
                     : ""
                   : `Showing ${visible.page * PAGE_SIZE + 1}–${visible.page * PAGE_SIZE + visible.items.length} of ${visible.total} events`}
             </p>

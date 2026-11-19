@@ -81,29 +81,38 @@ For `PATCH /api/events/:id` and `POST /api/events/:id/cancel`, look up the event
 
 ## "For you" feed
 
-**Incremental implementation (Aryan, Nov 18):** this branch now serves authenticated
-`GET /api/feed` using followed clubs (score 3), profile interests (score 1), then
-other upcoming events (score 0). One parameterized SQL query returns the page and
-total from the same snapshot, including an empty page past the end. Query validation
-and response types are `feedListQuerySchema` and `FeedEvent` in shared.
-
-The overall task remains unchecked below because score 2 (`followed_user`) waits
-for Rokyo's RSVP table to merge. No RSVP data is currently queried and the endpoint
-does not yet return that reason. When adding it, exclude anonymous RSVPs and
-private profiles; never return attendee identities in the feed.
+**Implemented (Aryan, Nov 19):** authenticated `GET /api/feed` ranks followed
+clubs (score 3), followed people's public RSVPs (score 2), profile interests
+(score 1), then other upcoming events (score 0). One parameterized SQL query
+returns `{ items, total }` from the same snapshot, including the correct total
+for an empty page past the end. Query validation and response types are
+`feedListQuerySchema` and `FeedEvent` in [shared](../shared/src/index.ts).
+Production SQL privacy/ranking tests pass against the actual Drizzle schema in
+isolated PostgreSQL (PGlite), and intercepted-API browser regressions pass. Live
+demo-account rehearsal remains pending; see [the verification runbook](tasks/aryan-feed-demo.md).
 
 | Status | Method | Path                       | Who       | Notes                                                                                                       |
 | ------ | ------ | -------------------------- | --------- | ----------------------------------------------------------------------------------------------------------- |
-| ⬜     | GET    | `/api/feed?limit=&offset=` | Signed in | Upcoming, not-cancelled events, ranked for the signed-in user. Each item is an `EventSummary` plus `reason` |
+| ✅     | GET    | `/api/feed?limit=&offset=` | Signed in | Upcoming, not-cancelled events, ranked for the signed-in user. Each item is an `EventSummary` plus `reason` |
 
 Ranking: every event gets the **highest** matching group, then the feed is sorted by group, then soonest first (`ORDER BY score DESC, starts_at, id`, so pagination stays stable):
 
 1. **From a club you follow.** `reason: "followed_club"`
-2. **A person you follow is going or interested.** `reason: "followed_user"`. **Only count RSVPs with `showOnAttendeeList = true`**, from public profiles, and **skip people who have blocked the viewer** (`notBlockedBy` in `server/src/blocks.ts`). Otherwise the feed would reveal RSVPs made anonymously, or let a blocked person keep tracking someone.
+2. **A person you follow is going or interested.** `reason: "followed_user"`. Both RSVP statuses qualify, but **only count RSVPs with `showOnAttendeeList = true`**. Left-join the RSVP user's profile and allow `is_public IS NULL OR is_public = true`: a missing profile row counts as public. **Exclude a followed person who has blocked the viewer** (`blocker_id = RSVP user`, `blocked_id = viewer`), matching the direction of `notBlockedBy` in [blocks.ts](../server/src/blocks.ts). Anonymous RSVPs and private or blocking users must not reveal social activity through the feed.
 3. **Its category is one of your profile interests.** `reason: "interest"`
 4. Everything else. `reason: null`
 
-The frontend shows the reason on the card ("From a club you follow", "People you follow are going"). Don't list _which_ people: names belong on the event's public attendee list only. Signed-out visitors use the normal `GET /api/events` list.
+The frontend shows the reason on the card ("From a club you follow", exactly
+"People you follow are going" for `followed_user`, including interested RSVPs).
+The feed never includes attendee identities; names belong on the event's public
+attendee list only. Signed-out visitors use the normal `GET /api/events` list.
+
+Home-page URL state uses `q`, `category`, one-based `page`, and `tab=all|for-you`
+through `useSearchParams`. Search/category apply to All events; For you uses only
+API `limit`/`offset` and retains those filters for switching back. With 12 cards
+per page, URL `page=2` means API `offset=12`. Opening an event from the feed carries
+the query to the detail page's **Back to events** link. A direct detail visit
+without feed navigation state returns to `/`.
 
 ## RSVPs, saves, and the dashboard
 

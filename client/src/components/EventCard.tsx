@@ -1,7 +1,7 @@
 // WHAT: A reusable, keyboard-accessible link to one event's detail page.
 // WITHOUT IT: The feed would duplicate its title, club, date, location, and price layout.
 import type { EventSummary } from "@orbit/shared";
-import { Link } from "react-router";
+import { Link, useLocation } from "react-router";
 import type { FeedReason } from "../lib/execTypes";
 import {
   categoryLabels,
@@ -12,7 +12,7 @@ import {
 
 const reasons = {
   followed_club: "From a club you follow",
-  followed_user: "People you follow are going or interested",
+  followed_user: "People you follow are going",
   interest: "Matches your interests",
 };
 
@@ -23,9 +23,13 @@ export default function EventCard({
   event: EventSummary;
   reason?: FeedReason;
 }) {
+  const location = useLocation();
   return (
     <Link
       to={`/events/${event.id}`}
+      state={
+        location.pathname === "/" ? { feedSearch: location.search } : undefined
+      }
       className="block rounded-xl border border-gray-200 bg-white p-4 shadow-sm transition hover:border-violet-300 hover:shadow focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-violet-700"
     >
       {/* Reasons never include names or follower counts; those are not feed data. */}

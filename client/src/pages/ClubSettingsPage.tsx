@@ -52,7 +52,7 @@ function ClubSettings({ slug }: { slug: string }) {
           {/* Not keyed by role: a transfer changes the role, and remounting would lose
               the "Ownership transferred" message. Permissions come from the `role` prop. */}
           <ExecMembers
-            key={state.data.id}
+            key={`execs:${state.data.id}`}
             clubId={state.data.id}
             clubName={state.data.name}
             role={access.role!}
