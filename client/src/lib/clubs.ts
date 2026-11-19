@@ -81,6 +81,11 @@ export const updateClub = async (id: string, input: ClubInput) =>
         "PATCH",
         updateClubSchema.parse(input),
       );
+// Owner only, and permanent: the server also deletes the club's events and RSVPs.
+export const deleteClub = async (id: string) =>
+  useMockExec
+    ? (await demo()).demoDeleteClub(id)
+    : apiWrite(`/clubs/${encodeURIComponent(id)}`, "DELETE");
 export async function writeMember(
   id: string,
   action: "add" | "role" | "remove" | "transfer",

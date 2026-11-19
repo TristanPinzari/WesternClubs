@@ -5,6 +5,7 @@ import { useCallback } from "react";
 import { backLink } from "../lib/ui";
 import { Link, useParams } from "react-router";
 import ClubForm from "../components/ClubForm";
+import DeleteClub from "../components/DeleteClub";
 import ExecMembers from "../components/ExecMembers";
 import RequestState from "../components/RequestState";
 import { useClubAccess } from "../hooks/useClubAccess";
@@ -59,6 +60,10 @@ function ClubSettings({ slug }: { slug: string }) {
             actorId={access.viewer.user!.id}
             onRoleChange={access.retry}
           />
+          {/* The server also checks this: only the owner's DELETE is accepted. */}
+          {access.role === "owner" && (
+            <DeleteClub clubId={state.data.id} clubName={state.data.name} />
+          )}
         </>
       )}
     </section>

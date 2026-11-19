@@ -104,6 +104,19 @@ export function demoUpdateClub(id: string, input: ClubInput) {
     if (event.club.id === id) event.club.name = club.name;
   return { ...club };
 }
+// Mirrors the server's cascade: the club's events, memberships and follows go with it.
+export function demoDeleteClub(id: string) {
+  const index = demoClubs.findIndex((item) => item.id === id);
+  if (index === -1) throw new Error("Club not found.");
+  if (roles.get(id) !== "owner")
+    throw new Error("Only the owner can delete this club.");
+  demoClubs.splice(index, 1);
+  for (let i = demoEvents.length - 1; i >= 0; i--)
+    if (demoEvents[i].club.id === id) demoEvents.splice(i, 1);
+  roles.delete(id);
+  members.delete(id);
+  followed.delete(id);
+}
 export const demoMembers = (id: string) =>
   structuredClone(members.get(id) ?? []);
 export function demoMemberWrite(
