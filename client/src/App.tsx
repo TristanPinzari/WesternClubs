@@ -5,12 +5,14 @@ import { NavLink, Route, Routes } from "react-router";
 import UserMenu from "./components/UserMenu";
 import ClubsPage from "./pages/ClubsPage";
 import EditProfilePage from "./pages/EditProfilePage";
+import FollowingPage from "./pages/FollowingPage";
 import HomePage from "./pages/HomePage";
 import EventDetailPage from "./pages/EventDetailPage";
 import MyEventsPage from "./pages/MyEventsPage";
 import ProfilePage from "./pages/ProfilePage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
+import WelcomePage from "./pages/WelcomePage";
 import ClubDetailPage from "./pages/ClubDetailPage";
 import CreateClubPage from "./pages/CreateClubPage";
 import ClubSettingsPage from "./pages/ClubSettingsPage";
@@ -55,8 +57,10 @@ export default function App() {
           <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />
+          <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/me" element={<MyEventsPage />} />
           <Route path="/me/profile" element={<EditProfilePage />} />
+          <Route path="/me/following" element={<FollowingPage />} />
           <Route path="/profile/:userId" element={<ProfilePage />} />
         </Routes>
       </main>

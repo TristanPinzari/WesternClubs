@@ -13,10 +13,11 @@ import {
 import { useEffect, useState, type FormEvent } from "react";
 import { Link } from "react-router";
 import Avatar from "../components/Avatar";
+import ImageUpload from "../components/ImageUpload";
 import { authClient } from "../lib/auth-client";
+import { categoryLabels } from "../lib/eventDisplay";
 import {
   getProfile,
-  interestLabels,
   linkLabels,
   saveMyProfile,
   yearLabel,
@@ -54,6 +55,8 @@ export default function EditProfilePage() {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [pictureBusy, setPictureBusy] = useState(false);
+  const [pictureError, setPictureError] = useState<string | null>(null);
 
   const user = session?.user;
   useEffect(() => {
@@ -86,6 +89,23 @@ export default function EditProfilePage() {
     setForm((f) => (f ? { ...f, ...changes } : f));
     setSaved(false);
   };
+
+  // The picture lives on your account (Better Auth's user.image), not in the profile,
+  // so it saves right away instead of waiting for "Save profile". null removes it.
+  // The server only accepts URLs from our own uploads, in your own users/ folder.
+  async function savePicture(url: string | null) {
+    setPictureBusy(true);
+    setPictureError(null);
+    try {
+      const { error } = await authClient.updateUser({ image: url });
+      if (error) setPictureError(error.message ?? "Could not save picture.");
+      // On success useSession() refreshes, so the avatar here and in the header update.
+    } catch {
+      setPictureError("Couldn't reach the server. Try again.");
+    } finally {
+      setPictureBusy(false);
+    }
+  }
 
   function toggleInterest(category: EventCategory) {
     if (!form) return;
@@ -152,15 +172,33 @@ export default function EditProfilePage() {
 
       {form && (
         <form onSubmit={handleSubmit} className="mt-6 space-y-6" noValidate>
-          <div className="flex items-center gap-4">
+          <div className="flex items-start gap-4">
             <Avatar name={user.name} image={user.image} size="lg" />
-            <div>
+            <div className="min-w-0 flex-1 space-y-2">
               <p className="font-semibold">{user.name}</p>
-              {/* TODO(Rokyo): reuse Aryan's ImageUpload here, then save its publicUrl
-                  with authClient.updateUser({ image }). Needs POST /api/uploads. */}
-              <p className="text-sm text-gray-500">
-                Profile pictures are coming soon.
-              </p>
+              {/* Uploads straight to storage, then saves the picture's URL on your
+                  account. No preview here: the avatar next to it updates instead. */}
+              <ImageUpload
+                folder="users"
+                label="Profile picture"
+                onChange={(image) => image && savePicture(image.publicUrl)}
+                onBusyChange={setPictureBusy}
+              />
+              {user.image && (
+                <button
+                  type="button"
+                  disabled={pictureBusy}
+                  onClick={() => savePicture(null)}
+                  className="min-h-11 text-sm text-gray-600 underline disabled:opacity-50"
+                >
+                  Remove picture
+                </button>
+              )}
+              {pictureError && (
+                <p role="alert" className="text-sm text-red-600">
+                  {pictureError}
+                </p>
+              )}
             </div>
           </div>
 
@@ -228,7 +266,7 @@ export default function EditProfilePage() {
                         : "border-gray-300 text-gray-700"
                     }`}
                   >
-                    {interestLabels[category]}
+                    {categoryLabels[category]}
                   </button>
                 );
               })}

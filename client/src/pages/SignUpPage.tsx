@@ -47,8 +47,8 @@ export default function SignUpPage() {
         setError(error.message ?? "Could not create your account.");
         return;
       }
-      // TODO(Rokyo): send new users to onboarding (pick interests, follow clubs) once it exists.
-      navigate("/");
+      // New users pick interests and follow clubs first, so their feed isn't empty.
+      navigate("/welcome");
     } catch {
       setError(
         "Couldn't reach the server. Check your connection and try again.",

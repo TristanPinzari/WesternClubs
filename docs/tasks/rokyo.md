@@ -113,23 +113,23 @@ Right now nobody can RSVP in the app: `EventAttendance` exists, but the event pa
 
 ### 2. Onboarding after sign-up
 
-- [ ] A `/welcome` page: pick interests (the same chips as the profile page; save with `PUT /api/me/profile` sending just `{ interests }`), then follow a few clubs (list from `GET /api/clubs`, Follow buttons like the club page's), then a "Done" button that goes to `/`.
-- [ ] Send new users there from `SignUpPage.tsx` (the `TODO(Rokyo)` there) instead of `/`.
+- [x] A `/welcome` page: pick interests (the same chips as the profile page; save with `PUT /api/me/profile` sending just `{ interests }`), then follow a few clubs (list from `GET /api/clubs`, Follow buttons like the club page's), then a "Done" button that goes to `/`.
+- [x] Send new users there from `SignUpPage.tsx` (the `TODO(Rokyo)` there) instead of `/`.
 - [ ] Without this, a brand-new user's "For you" feed is empty during the demo.
 
 ### 3. Profile picture upload
 
-- [ ] On `/me/profile`, replace the "coming soon" text (the `TODO(Rokyo)` on the edit page) with Aryan's `ImageUpload` component, using the `users` folder.
-- [ ] After it uploads, save the picture with `authClient.updateUser({ image: publicUrl })`. The header and profile already show `user.image`.
+- [x] On `/me/profile`, replace the "coming soon" text (the `TODO(Rokyo)` on the edit page) with Aryan's `ImageUpload` component, using the `users` folder.
+- [x] After it uploads, save the picture with `authClient.updateUser({ image: publicUrl })`. The header and profile already show `user.image`.
 
 ### 4. "Following" page
 
-- [ ] `/me/following`: the clubs and people you follow (`GET /api/me/following`), each linking to its page, with an Unfollow button. Link to it from the header menu or `/me`.
+- [x] `/me/following`: the clubs and people you follow (`GET /api/me/following`), each linking to its page, with an Unfollow button. Link to it from the header menu or `/me`.
 
 ### 5. Clean-ups
 
-- [ ] `lib/profiles.ts`: use `categoryLabels` from `lib/eventDisplay.ts` instead of `interestLabels` (the `TODO(Rokyo)` there)
-- [ ] `MyEventsPage.tsx`: use `formatEventDate` / `formatEventTime` from `lib/eventDisplay.ts` (the `TODO(Rokyo)` there)
+- [x] `lib/profiles.ts`: use `categoryLabels` from `lib/eventDisplay.ts` instead of `interestLabels` (the `TODO(Rokyo)` there)
+- [x] `MyEventsPage.tsx`: use `formatEventDate` / `formatEventTime` from `lib/eventDisplay.ts` (the `TODO(Rokyo)` there)
 
 ### Not planned
 

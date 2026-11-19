@@ -1,11 +1,6 @@
 // WHAT: Profile and follow API calls, plus labels, in one place.
 // WITHOUT IT: Every profile page would build its own URLs and labels, and they'd drift.
-import type {
-  EventCategory,
-  LinkKind,
-  Profile,
-  UpdateProfileInput,
-} from "@orbit/shared";
+import type { LinkKind, Profile, UpdateProfileInput } from "@orbit/shared";
 import { apiGet, apiWrite } from "./api";
 
 // 404 for both "doesn't exist" and "is private" (on purpose, see ProfilePage).
@@ -23,16 +18,6 @@ export const setFollowing = (userId: string, follow: boolean) =>
   );
 
 // ---- Labels ----
-
-// TODO(Rokyo): use categoryLabels from lib/eventDisplay.ts instead (Aryan's #18 is merged).
-export const interestLabels: Record<EventCategory, string> = {
-  academic: "Academic",
-  social: "Social",
-  networking: "Networking",
-  sports_recreation: "Sports & recreation",
-  technology: "Technology",
-  arts_culture: "Arts & culture",
-};
 
 // Typed by LinkKind, so adding a link kind in shared makes TypeScript ask for a label.
 export const linkLabels: Record<LinkKind, string> = {
