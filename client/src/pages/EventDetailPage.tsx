@@ -186,7 +186,7 @@ export default function EventDetailPage() {
           </dl>
 
           <h2 className="mt-6 text-xl font-semibold">About this event</h2>
-          <p className="mt-2 whitespace-pre-wrap break-words text-gray-700">
+          <p className="mt-2 whitespace-pre-wrap wrap-break-word text-gray-700">
             {event.description ||
               "The organizer has not added a description yet."}
           </p>
