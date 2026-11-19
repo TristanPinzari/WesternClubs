@@ -6,20 +6,16 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import { apiGet } from "../lib/api";
 import { authClient } from "../lib/auth-client";
+import { formatEventTime } from "../lib/eventDisplay";
 
-// Same time zone rule as the rest of Orbit: Western events are in London, Ontario time.
-// TODO(Rokyo): swap these for formatEventDate/formatEventTime from lib/eventDisplay.ts
-//   once Aryan's #18 merges, so every page formats dates the same way.
+// The small calendar block ("FRI / Nov 20") needs a shorter date than
+// formatEventDate gives, so it has its own formatter, using the same time zone rule
+// as lib/eventDisplay.ts (Western events are in London, Ontario time).
 const dayFormat = new Intl.DateTimeFormat("en-CA", {
   timeZone: "America/Toronto",
   weekday: "short",
   month: "short",
   day: "numeric",
-});
-const timeFormat = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "America/Toronto",
-  hour: "numeric",
-  minute: "2-digit",
 });
 
 export default function MyEventsPage() {
@@ -63,12 +59,17 @@ export default function MyEventsPage() {
     <div>
       <div className="flex items-center justify-between gap-4">
         <h1 className="text-2xl font-bold">My events</h1>
-        <Link
-          to={`/profile/${session.user.id}`}
-          className="text-sm font-medium text-violet-700 underline"
-        >
-          My profile
-        </Link>
+        <div className="flex shrink-0 gap-4 text-sm font-medium">
+          <Link to="/me/following" className="text-violet-700 underline">
+            Following
+          </Link>
+          <Link
+            to={`/profile/${session.user.id}`}
+            className="text-violet-700 underline"
+          >
+            My profile
+          </Link>
+        </div>
       </div>
 
       {error && <p className="mt-4 text-red-600">{error}</p>}
@@ -147,7 +148,7 @@ function MyEventRow({ item }: { item: MyEvent }) {
         <div className="min-w-0">
           <p className="line-clamp-2 font-semibold">{event.title}</p>
           <p className="truncate text-sm text-gray-600">
-            {event.club.name} · {timeFormat.format(startsAt)}
+            {event.club.name} · {formatEventTime(event.startsAt)}
             {event.location && ` · ${event.location}`}
           </p>
           {(event.cancelledAt || !rsvp.showOnAttendeeList) && (

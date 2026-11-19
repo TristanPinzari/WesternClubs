@@ -7,9 +7,9 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router";
 import Avatar from "../components/Avatar";
 import { authClient } from "../lib/auth-client";
+import { categoryLabels } from "../lib/eventDisplay";
 import {
   getProfile,
-  interestLabels,
   linkLabels,
   setFollowing,
   yearLabel,
@@ -156,7 +156,7 @@ export default function ProfilePage() {
                 key={interest}
                 className="rounded-full bg-violet-50 px-3 py-1 text-sm text-violet-800"
               >
-                {interestLabels[interest]}
+                {categoryLabels[interest]}
               </li>
             ))}
           </ul>
