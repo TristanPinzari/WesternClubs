@@ -78,8 +78,10 @@ The goal is to help students discover events and find their people.
 ### Following
 
 - Follow clubs and other students. Following is one-way and needs no approval.
+- Find people on the **People** page: search by name or program, browse everyone with a public profile, or follow suggested students who share your interests. Private profiles never appear.
 - Events from clubs and people you follow appear higher in your feed.
-- **No follower counts or follower lists.** Orbit is for finding events and people, not for comparing popularity.
+- **No follower counts, and nobody can see anyone else's followers.** Orbit is for finding events and people, not for comparing popularity.
+- **See who follows you, and silently block anyone.** Only you can see your own followers. Blocking someone hides you from them everywhere (profile, search, attendee lists), and to them you just look like a private profile.
 
 ### Meeting People at Events
 
@@ -180,6 +182,7 @@ Every file starts with a `WHAT` / `WITHOUT IT` comment explaining its purpose. J
    ```bash
    npm run db:push
    npm run db:seed
+   npm run db:seed:demo   # demo accounts: needs DEMO_PASSWORD in server/.env (see below)
    ```
 5. **Run the app:**
    ```bash
@@ -187,16 +190,32 @@ Every file starts with a `WHAT` / `WITHOUT IT` comment explaining its purpose. J
    ```
    Open http://localhost:5173 and check the **Clubs** tab, which works end to end.
 
+### Demo accounts
+
+`npm run db:seed:demo` creates these fictional accounts. They all use the password in `DEMO_PASSWORD` (ask Tristan; it's never committed). It's safe to run again: it resets their profiles, club roles, follows, and RSVPs to the seed values, so re-run it between demo rehearsals. Clubs and events created live during a rehearsal are not removed; delete those in `npm run db:studio` if needed.
+
+| Email                      | Who                             | Use it to show                                                     |
+| -------------------------- | ------------------------------- | ------------------------------------------------------------------ |
+| `orbit.demo.exec@uwo.ca`   | Maya Patel, owner of Western AI | Posting and editing events, club settings, managing execs          |
+| `orbit.demo.jordan@uwo.ca` | Jordan Lee, student             | **The main demo account:** "For you" feed, following, RSVPs, `/me` |
+| `orbit.demo.priya@uwo.ca`  | Priya Shah, student             | A public profile with several RSVPs                                |
+| `orbit.demo.sam@uwo.ca`    | Sam Okafor, student             | An anonymous RSVP (Cooperative Board Game Night)                   |
+| `orbit.demo.alex@uwo.ca`   | Alex Martin, student            | A first-year looking for teammates                                 |
+| `orbit.demo.riley@uwo.ca`  | Riley Nguyen, student           | A **private** profile: never on attendee lists, can't be followed  |
+
+Privacy check for the demo: "Build Your First AI Study Tool" and "Cooperative Board Game Night" each have RSVPs from Riley (private) or Sam (anonymous). They're counted, but their names never appear on the attendee list.
+
 ### Useful commands
 
-| Command             | What it does                                                    |
-| ------------------- | --------------------------------------------------------------- |
-| `npm run dev`       | Runs the frontend (port 5173) and backend (port 3000) together  |
-| `npm run db:push`   | Applies changes from `server/src/db/schema.ts` to your database |
-| `npm run db:seed`   | Inserts demo data                                               |
-| `npm run db:studio` | Opens a browser UI for viewing and editing your database        |
-| `npm run typecheck` | Checks the whole project for TypeScript errors                  |
-| `npm run format`    | Formats every file with Prettier                                |
+| Command                | What it does                                                        |
+| ---------------------- | ------------------------------------------------------------------- |
+| `npm run dev`          | Runs the frontend (port 5173) and backend (port 3000) together      |
+| `npm run db:push`      | Applies changes from `server/src/db/schema.ts` to your database     |
+| `npm run db:seed`      | Inserts demo data                                                   |
+| `npm run db:seed:demo` | Creates the demo accounts, follows, and RSVPs (run after `db:seed`) |
+| `npm run db:studio`    | Opens a browser UI for viewing and editing your database            |
+| `npm run typecheck`    | Checks the whole project for TypeScript errors                      |
+| `npm run format`       | Formats every file with Prettier                                    |
 
 ### Deployment
 

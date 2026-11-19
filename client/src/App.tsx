@@ -4,10 +4,17 @@
 import { NavLink, Route, Routes } from "react-router";
 import UserMenu from "./components/UserMenu";
 import ClubsPage from "./pages/ClubsPage";
+import EditProfilePage from "./pages/EditProfilePage";
+import FollowersPage from "./pages/FollowersPage";
+import FollowingPage from "./pages/FollowingPage";
 import HomePage from "./pages/HomePage";
 import EventDetailPage from "./pages/EventDetailPage";
+import MyEventsPage from "./pages/MyEventsPage";
+import PeoplePage from "./pages/PeoplePage";
+import ProfilePage from "./pages/ProfilePage";
 import SignInPage from "./pages/SignInPage";
 import SignUpPage from "./pages/SignUpPage";
+import WelcomePage from "./pages/WelcomePage";
 import ClubDetailPage from "./pages/ClubDetailPage";
 import CreateClubPage from "./pages/CreateClubPage";
 import ClubSettingsPage from "./pages/ClubSettingsPage";
@@ -33,6 +40,9 @@ export default function App() {
           <NavLink to="/clubs" className={navLinkClass}>
             Clubs
           </NavLink>
+          <NavLink to="/people" className={navLinkClass}>
+            People
+          </NavLink>
           {/* Demo identities never call real auth; live mode uses Rokyo's merged menu. */}
           {!useMockExec && <UserMenu />}
         </nav>
@@ -52,8 +62,13 @@ export default function App() {
           <Route path="/events/:id" element={<EventDetailPage />} />
           <Route path="/sign-in" element={<SignInPage />} />
           <Route path="/sign-up" element={<SignUpPage />} />
-          {/* TODO: add pages as you build them, e.g.
-              /clubs/:slug, /me (dashboard), /profile/:id */}
+          <Route path="/welcome" element={<WelcomePage />} />
+          <Route path="/me" element={<MyEventsPage />} />
+          <Route path="/me/profile" element={<EditProfilePage />} />
+          <Route path="/me/following" element={<FollowingPage />} />
+          <Route path="/me/followers" element={<FollowersPage />} />
+          <Route path="/people" element={<PeoplePage />} />
+          <Route path="/profile/:userId" element={<ProfilePage />} />
         </Routes>
       </main>
     </div>

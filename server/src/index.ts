@@ -9,11 +9,13 @@ import { errorHandler, loadSession } from "./middleware";
 import { clubsRouter } from "./routes/clubs";
 import { eventsRouter } from "./routes/events";
 import { meRouter } from "./routes/me";
+import { meEventsRouter } from "./routes/me-events";
 import { membersRouter } from "./routes/members";
 import { profilesRouter } from "./routes/profiles";
 import { uploadsRouter } from "./routes/uploads";
 import { usersRouter } from "./routes/users";
 import { feedRouter } from "./routes/feed";
+import { rsvpsRouter } from "./routes/rsvps";
 
 const app = express();
 
@@ -30,12 +32,13 @@ app.get("/api/health", (_req, res) => {
 app.use("/api/clubs", clubsRouter);
 app.use("/api/clubs/:clubId", membersRouter); // members + transfer-ownership
 app.use("/api/events", eventsRouter);
+app.use("/api/events", rsvpsRouter); // /api/events/:id/rsvp and /:id/attendees
 app.use("/api/uploads", uploadsRouter);
-app.use("/api/me", meRouter);
+app.use("/api/me", meRouter); // /clubs, /following, /profile
+app.use("/api/me", meEventsRouter); // /events (the dashboard)
 app.use("/api/users", usersRouter);
 app.use("/api/profiles", profilesRouter);
 app.use("/api/feed", feedRouter);
-// TODO(Rokyo): rsvps. Feed ranking based on public RSVPs waits for that table.
 
 app.use(errorHandler);
 

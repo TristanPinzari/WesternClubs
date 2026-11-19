@@ -1,10 +1,28 @@
-// WHAT: Endpoints about other students (everything under /api/users): following them.
-// WITHOUT IT: Students couldn't follow each other, so the "For you" feed couldn't show
-//   "People you follow are going".
-import { and, eq } from "drizzle-orm";
+// WHAT: Endpoints about other students (everything under /api/users): finding them
+//   (search and suggestions), following them, and blocking them.
+// WITHOUT IT: Students couldn't find their friends or follow each other, so the "For
+//   you" feed couldn't show "People you follow are going".
+import {
+  peopleQuerySchema,
+  type EventCategory,
+  type Paginated,
+  type PersonSummary,
+} from "@orbit/shared";
+import {
+  and,
+  arrayOverlaps,
+  asc,
+  count,
+  eq,
+  ilike,
+  isNull,
+  ne,
+  or,
+} from "drizzle-orm";
 import { Router } from "express";
+import { hasBlocked, notBlockedBy } from "../blocks";
 import { db } from "../db";
-import { profile, user, userFollow } from "../db/schema";
+import { profile, user, userBlock, userFollow } from "../db/schema";
 import { requireAuth } from "../middleware";
 
 export const usersRouter = Router();
@@ -20,6 +38,144 @@ export async function isPublicProfile(userId: string): Promise<boolean> {
   return !!row && row.isPublic !== false; // isPublic is null when there's no profile row
 }
 
+// Every query below must use this: private profiles never show up in lists. A missing
+// profile row (null) counts as public, like everywhere else.
+const isPublic = or(isNull(profile.isPublic), eq(profile.isPublic, true));
+
+async function myInterests(userId: string): Promise<EventCategory[]> {
+  const [row] = await db
+    .select({ interests: profile.interests })
+    .from(profile)
+    .where(eq(profile.userId, userId));
+  return row?.interests ?? [];
+}
+
+// The columns a PersonSummary needs. `followedBy` is my user id if I follow them (from
+// the left join below), or null if I don't.
+const personColumns = {
+  id: user.id,
+  name: user.name,
+  image: user.image,
+  program: profile.program,
+  yearOfStudy: profile.yearOfStudy,
+  interests: profile.interests,
+  followedBy: userFollow.followerId,
+};
+
+function toPerson(
+  row: {
+    id: string;
+    name: string;
+    image: string | null;
+    program: string | null;
+    yearOfStudy: number | null;
+    interests: EventCategory[] | null;
+    followedBy: string | null;
+  },
+  mine: EventCategory[],
+): PersonSummary {
+  const theirs = row.interests ?? [];
+  return {
+    id: row.id,
+    name: row.name,
+    image: row.image,
+    program: row.program,
+    yearOfStudy: row.yearOfStudy,
+    isFollowing: row.followedBy !== null,
+    sharedInterests: mine.filter((interest) => theirs.includes(interest)),
+  };
+}
+
+// LIKE treats % and _ as wildcards. Escape them so searching "100%" means "100%".
+const likePattern = (q: string) => `%${q.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+
+// GET /api/users?q=&limit=&offset=  -> Paginated<PersonSummary>
+// Signed in only. Lists every PUBLIC profile except your own, A to Z, or searches them by
+// name or program. Private profiles never appear. Never returns emails.
+usersRouter.get("/", requireAuth, async (req, res) => {
+  const query = peopleQuerySchema.parse(req.query);
+  const me = req.user!.id;
+  const pattern = query.q ? likePattern(query.q) : undefined;
+  const where = and(
+    ne(user.id, me),
+    isPublic,
+    notBlockedBy(user.id, me), // people who blocked me never appear
+    pattern
+      ? or(ilike(user.name, pattern), ilike(profile.program, pattern))
+      : undefined,
+  );
+
+  const [rows, [{ total }], mine] = await Promise.all([
+    db
+      .select(personColumns)
+      .from(user)
+      .leftJoin(profile, eq(profile.userId, user.id))
+      .leftJoin(
+        userFollow,
+        and(eq(userFollow.followeeId, user.id), eq(userFollow.followerId, me)),
+      )
+      .where(where)
+      // Tie-break on id so pages never repeat or skip someone with the same name.
+      .orderBy(asc(user.name), asc(user.id))
+      .limit(query.limit)
+      .offset(query.offset),
+    db
+      .select({ total: count() })
+      .from(user)
+      .leftJoin(profile, eq(profile.userId, user.id))
+      .where(where),
+    myInterests(me),
+  ]);
+
+  const body: Paginated<PersonSummary> = {
+    items: rows.map((row) => toPerson(row, mine)),
+    total,
+  };
+  res.json(body);
+});
+
+const MAX_SUGGESTIONS = 10;
+
+// GET /api/users/suggestions  -> PersonSummary[]
+// Up to 10 public profiles that share at least one interest with you, most shared
+// interests first, excluding yourself and people you already follow. Empty if you
+// haven't picked any interests yet.
+usersRouter.get("/suggestions", requireAuth, async (req, res) => {
+  const me = req.user!.id;
+  const mine = await myInterests(me);
+  if (mine.length === 0) {
+    res.json([]);
+    return;
+  }
+
+  const rows = await db
+    .select(personColumns)
+    .from(user)
+    // INNER join: you need a profile with interests to be suggested.
+    .innerJoin(profile, eq(profile.userId, user.id))
+    .leftJoin(
+      userFollow,
+      and(eq(userFollow.followeeId, user.id), eq(userFollow.followerId, me)),
+    )
+    .where(
+      and(
+        ne(user.id, me),
+        isPublic,
+        notBlockedBy(user.id, me),
+        arrayOverlaps(profile.interests, mine), // at least one interest in common
+        isNull(userFollow.followerId), // not already followed
+      ),
+    )
+    .orderBy(asc(user.name), asc(user.id))
+    .limit(50); // a small pool, ranked below
+
+  const suggestions = rows
+    .map((row) => toPerson(row, mine))
+    .sort((a, b) => b.sharedInterests.length - a.sharedInterests.length) // stable: keeps A to Z within ties
+    .slice(0, MAX_SUGGESTIONS);
+  res.json(suggestions);
+});
+
 // PUT /api/users/:userId/follow  -> 204    (follow a student)
 // One-way, no approval. You can't follow yourself (400), and a private profile acts
 // like it doesn't exist (404), so this can't be used to discover who has an account.
@@ -29,7 +185,11 @@ usersRouter.put("/:userId/follow", requireAuth, async (req, res) => {
     res.status(400).json({ error: "You can't follow yourself" });
     return;
   }
-  if (!(await isPublicProfile(targetId))) {
+  // Private, or they blocked me: the same 404 either way, so a block stays silent.
+  if (
+    !(await isPublicProfile(targetId)) ||
+    (await hasBlocked(targetId, req.user!.id))
+  ) {
     res.status(404).json({ error: "Profile not found" });
     return;
   }
@@ -49,6 +209,53 @@ usersRouter.delete("/:userId/follow", requireAuth, async (req, res) => {
       and(
         eq(userFollow.followerId, req.user!.id),
         eq(userFollow.followeeId, String(req.params.userId)),
+      ),
+    );
+  res.status(204).end();
+});
+
+// PUT /api/users/:userId/block  -> 204  (silently block someone)
+// Removes their follow of me and hides me from them everywhere (see blocks.ts). They
+// aren't told: to them I just look like a private profile. Safe to repeat.
+usersRouter.put("/:userId/block", requireAuth, async (req, res) => {
+  const me = req.user!.id;
+  const targetId = String(req.params.userId);
+  if (targetId === me) {
+    res.status(400).json({ error: "You can't block yourself" });
+    return;
+  }
+  const [target] = await db
+    .select({ id: user.id })
+    .from(user)
+    .where(eq(user.id, targetId));
+  if (!target) {
+    res.status(404).json({ error: "User not found" });
+    return;
+  }
+  // Both or neither: never block someone but leave their follow in place.
+  await db.transaction(async (tx) => {
+    await tx
+      .insert(userBlock)
+      .values({ blockerId: me, blockedId: targetId })
+      .onConflictDoNothing();
+    await tx
+      .delete(userFollow)
+      .where(
+        and(eq(userFollow.followerId, targetId), eq(userFollow.followeeId, me)),
+      );
+  });
+  res.status(204).end();
+});
+
+// DELETE /api/users/:userId/block  -> 204  (unblock)
+// They can see me again, but their old follow doesn't come back.
+usersRouter.delete("/:userId/block", requireAuth, async (req, res) => {
+  await db
+    .delete(userBlock)
+    .where(
+      and(
+        eq(userBlock.blockerId, req.user!.id),
+        eq(userBlock.blockedId, String(req.params.userId)),
       ),
     );
   res.status(204).end();

@@ -3,6 +3,7 @@
 import type { Profile } from "@orbit/shared";
 import { and, eq } from "drizzle-orm";
 import { Router } from "express";
+import { hasBlocked } from "../blocks";
 import { db } from "../db";
 import { profile, user, userFollow } from "../db/schema";
 import { requireAuth } from "../middleware";
@@ -31,6 +32,8 @@ export async function getProfile(
   const isMe = userId === viewerId;
   const isPublic = row.profile?.isPublic ?? true; // no profile row yet = public
   if (!isPublic && !isMe) return null;
+  // Blocked by them: same 404 as a private profile, so the block stays silent.
+  if (!isMe && (await hasBlocked(userId, viewerId))) return null;
 
   let isFollowing = false;
   if (!isMe) {

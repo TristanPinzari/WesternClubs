@@ -119,7 +119,39 @@ export interface EventDetail extends EventSummary {
   eligibility: string;
   registrationUrl: string | null;
   cancelledAt: string | null; // the detail page still loads cancelled events, so show a banner
-  // TODO: goingCount / interestedCount once the event_rsvp table exists
+  // Going/interested counts live in RsvpSummary (GET /api/events/:id/rsvp), so the
+  // RSVP panel can refresh them without reloading the whole event.
+}
+
+// ---- RSVPs (PUT /api/events/:id/rsvp, GET /api/events/:id/rsvp, /attendees) ----
+
+// Body for PUT /api/events/:id/rsvp. Creates the RSVP, or replaces your existing one.
+export const rsvpBodySchema = z.object({
+  status: z.enum(RSVP_STATUSES),
+  // Visible by default: leaving it out means "show me". false = RSVP anonymously.
+  showOnAttendeeList: z.boolean().default(true),
+  purpose: z.enum(ATTENDANCE_PURPOSES).nullable().default(null),
+  lookingForBuddy: z.boolean().default(false),
+});
+export type RsvpBody = z.input<typeof rsvpBodySchema>; // what the client sends
+export type MyRsvp = z.output<typeof rsvpBodySchema>; // what's stored (defaults filled in)
+
+// GET /api/events/:id/rsvp: the counts anyone can see, plus your own RSVP.
+// Counts include anonymous RSVPs: a number doesn't reveal who.
+export interface RsvpSummary {
+  goingCount: number;
+  interestedCount: number;
+  mine: MyRsvp | null; // null if you haven't RSVP'd, or aren't signed in
+}
+
+// One person on an event's attendee list (GET /api/events/:id/attendees).
+export interface Attendee {
+  userId: string;
+  name: string;
+  image: string | null;
+  status: RsvpStatus;
+  purpose: AttendancePurpose | null;
+  lookingForBuddy: boolean;
 }
 
 // ---- Clubs (POST /api/clubs) ----
@@ -169,11 +201,15 @@ export interface UploadResponse {
 
 // Accepts only keys in the exact shape POST /api/uploads makes for this folder, e.g.
 // "events/<uuid>.png". So a club can't use a key from another folder, or make one up.
+// Profile pictures also include the uploader's user id: "users/<userId>/<uuid>.png",
+// so the server can check that a picture is yours (see server/src/auth.ts).
 export const uploadKeySchema = (folder: UploadFolder) =>
   z
     .string()
     .regex(
-      new RegExp(`^${folder}/[0-9a-f-]{36}\\.(jpg|png|webp|gif)$`),
+      new RegExp(
+        `^${folder}/${folder === "users" ? "[A-Za-z0-9_-]{1,64}/" : ""}[0-9a-f-]{36}\\.(jpg|png|webp|gif)$`,
+      ),
       "Invalid image",
     );
 
@@ -324,6 +360,25 @@ export interface MyFollowing {
   users: UserSummary[];
 }
 
+// ---- Finding people (GET /api/users, GET /api/users/suggestions) ----
+
+// GET /api/users?q=&limit=&offset=. No `q` lists everyone (A to Z); `q` searches names
+// and programs. Only public profiles are ever returned, and never yourself.
+export const peopleQuerySchema = z.object({
+  q: emptyAsUndefined(z.string().trim().max(100).optional()),
+  limit: emptyAsUndefined(z.coerce.number().int().min(1).max(50).default(20)),
+  offset: emptyAsUndefined(z.coerce.number().int().min(0).default(0)),
+});
+export type PeopleQuery = z.infer<typeof peopleQuerySchema>;
+
+// A student in search results or suggestions. Never includes an email.
+export interface PersonSummary extends UserSummary {
+  program: string | null;
+  yearOfStudy: number | null;
+  isFollowing: boolean; // do I follow them?
+  sharedInterests: EventCategory[]; // interests we both have (empty if none)
+}
+
 // ---- Profiles ----
 
 // GET /api/profiles/:userId. Your name and picture come from your account (Better Auth's
@@ -358,8 +413,6 @@ export const updateProfileSchema = z
   .partial();
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
-// TODO: add schemas and types as you build each endpoint in docs/API.md
-
 // ---- Aryan's feed: use only merged tables; public-RSVP ranking is still pending. ----
 export const feedListQuerySchema = eventListQuerySchema.pick({
   limit: true,
@@ -369,3 +422,21 @@ export type FeedReason = "followed_club" | "followed_user" | "interest" | null;
 export interface FeedEvent extends EventSummary {
   reason: FeedReason;
 }
+
+// ---- Dashboard (GET /api/me/events) ----
+
+// One of my RSVPs, with the event it's for. `cancelledAt` is included so the dashboard
+// can warn you when an event you're going to gets cancelled.
+export interface MyEvent {
+  event: EventSummary & { cancelledAt: string | null };
+  rsvp: MyRsvp;
+}
+
+// Upcoming events soonest first, then past events most recent first.
+// TODO: add `saved` here if we build Save (low priority, see docs/API.md).
+export interface MyEvents {
+  upcoming: MyEvent[];
+  past: MyEvent[];
+}
+
+// TODO: add schemas and types as you build each endpoint in docs/API.md

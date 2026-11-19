@@ -1,6 +1,7 @@
 // WHAT: The API endpoints for clubs (everything under /api/clubs).
 //   EXAMPLE ROUTER: copy this pattern for events.ts, profiles.ts, etc.
 // WITHOUT IT: /api/clubs would return 404, and the Clubs page would show an error.
+import { randomBytes } from "node:crypto";
 import {
   clubListQuerySchema,
   createClubSchema,
@@ -129,13 +130,16 @@ const MAX_SLUG_ATTEMPTS = 5;
 // share a name; the second one gets a numbered slug ("western-ai-2").
 clubsRouter.post("/", requireAuth, async (req, res) => {
   const input = createClubSchema.parse(req.body);
-  const base = slugify(input.name);
-  if (!base) {
+  // \p{L} = a letter in any alphabet, \p{N} = a number. "!!!" has neither: reject it.
+  if (!/[\p{L}\p{N}]/u.test(input.name)) {
     res
       .status(400)
       .json({ error: "Club name must contain at least one letter or number" });
     return;
   }
+  // A name in a non-Latin alphabet ("한국 학생회") has letters, but none that fit in a
+  // URL slug, so slugify returns "". Give it a random one instead: "club-3fa9c2".
+  const base = slugify(input.name) || `club-${randomBytes(3).toString("hex")}`;
 
   for (let attempt = 1; ; attempt++) {
     const slug = await findFreeSlug(base);

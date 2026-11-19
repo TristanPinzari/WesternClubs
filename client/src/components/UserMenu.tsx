@@ -2,8 +2,9 @@
 //   or Sign in / Sign up links when nobody is signed in.
 // WITHOUT IT: There'd be no way to reach the auth pages from the nav, and no sign that
 //   you're signed in (or as whom).
-import { Link, useNavigate } from "react-router";
+import { Link, NavLink, useNavigate } from "react-router";
 import { authClient } from "../lib/auth-client";
+import Avatar from "./Avatar";
 
 export default function UserMenu() {
   const navigate = useNavigate();
@@ -46,8 +47,18 @@ export default function UserMenu() {
 
   return (
     <div className="ml-auto flex min-w-0 items-center gap-3 text-sm">
-      {/* TODO(Rokyo): show the profile picture (session.user.image) once uploads exist. */}
-      <span className="truncate font-medium">{session.user.name}</span>
+      {/* Your picture and name open your dashboard: the events you're going to.
+          Shows your initial until profile pictures (uploads) exist. */}
+      <NavLink
+        to="/me"
+        end
+        className={({ isActive }) =>
+          `flex min-w-0 items-center gap-2 font-medium ${isActive ? "text-violet-700" : ""}`
+        }
+      >
+        <Avatar name={session.user.name} image={session.user.image} size="sm" />
+        <span className="truncate">{session.user.name}</span>
+      </NavLink>
       <button
         type="button"
         onClick={handleSignOut}

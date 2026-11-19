@@ -17,7 +17,8 @@
     "format:check": "prettier --check .",
     "db:push": "npm run db:push --workspace server",
     "db:studio": "npm run db:studio --workspace server",
-    "db:seed": "npm run db:seed --workspace server"
+    "db:seed": "npm run db:seed --workspace server",
+    "db:seed:demo": "npm run db:seed:demo --workspace server"
   },
   "devDependencies": {
     "concurrently": "^10.0.7",

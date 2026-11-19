@@ -10,6 +10,7 @@ import {
   formatPrice,
   registrationLink,
 } from "../lib/eventDisplay";
+import EventAttendance from "../components/EventAttendance";
 import { getEvent, useMockEvents } from "../lib/events";
 import { useClubAccess } from "../hooks/useClubAccess";
 import { canPostEvent } from "../lib/execTypes";
@@ -194,16 +195,16 @@ export default function EventDetailPage() {
               </p>
             )}
           </div>
-          {/* TODO(Rokyo): mount the real RSVP controls here; no fake attendance counts. */}
-          <section
-            aria-label="Attendance"
-            className="mt-6 min-h-20 rounded-xl border border-dashed border-gray-300 p-4"
-          >
-            <h2 className="font-semibold">Interested or going?</h2>
-            <p className="mt-1 text-sm text-gray-600">
-              Attendance options are coming soon.
-            </p>
-          </section>
+          {/* RSVP + attendee list. key={event.id} gives each event a fresh component,
+              so a half-filled RSVP form never carries over to the next event.
+              Mock events aren't in the database, so they can't take RSVPs. */}
+          {!useMockEvents && (
+            <EventAttendance
+              key={event.id}
+              eventId={event.id}
+              closed={Boolean(event.cancelledAt) || hasEnded}
+            />
+          )}
         </>
       )}
     </article>
