@@ -65,7 +65,9 @@ export default function ImageUpload({
         accept={IMAGE_TYPES.join(",")}
         disabled={disabled || busy}
         aria-describedby={`${id}-hint`}
-        className="min-h-11 w-full min-w-0 text-sm"
+        // The file: classes style the browser's built-in "Choose file" button to match
+        // btnSecondary, so the picker stays native (keyboard and screen readers work as-is).
+        className="w-full min-w-0 cursor-pointer text-sm text-gray-600 file:mr-3 file:min-h-11 file:cursor-pointer file:rounded-lg file:border file:border-gray-300 file:bg-white file:px-4 file:text-sm file:font-semibold file:text-gray-700 file:transition hover:file:border-violet-300 hover:file:text-violet-700 focus-visible:outline-none focus-visible:file:outline-2 focus-visible:file:outline-offset-2 focus-visible:file:outline-violet-700 disabled:cursor-not-allowed disabled:file:opacity-50"
         onChange={(e) => {
           void select(e.target.files?.[0]);
           e.target.value = "";
