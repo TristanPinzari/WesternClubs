@@ -150,11 +150,24 @@ export default function EventDetailPage() {
               </Link>
             )}
           {event.imageUrl && (
-            <img
-              src={event.imageUrl}
-              alt=""
-              className="mt-5 max-h-80 w-full rounded-xl object-cover"
-            />
+            // Two layers, so a poster of any shape fits without being cropped: the
+            // back layer is the same image, stretched and blurred to fill the frame;
+            // the front layer is the real image, shown whole (object-contain).
+            <div className="relative mt-5 flex h-64 items-center justify-center overflow-hidden rounded-xl bg-gray-100 sm:h-80">
+              {/* scale-150 pushes the blur's soft, see-through edges outside the frame
+                  (at scale-110 they still showed as a white haze around the border). */}
+              <img
+                src={event.imageUrl}
+                alt=""
+                aria-hidden="true"
+                className="absolute inset-0 h-full w-full scale-150 object-cover blur-2xl"
+              />
+              <img
+                src={event.imageUrl}
+                alt=""
+                className="relative max-h-full max-w-full object-contain"
+              />
+            </div>
           )}
 
           <dl className="mt-5 divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white text-sm">
