@@ -18,7 +18,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const apiGet = <T>(path: string) => request<T>(path);
 
-// All writes (POST/PUT/PATCH/DELETE) go through this. Some return 204, not JSON. Some successful mutations return 204, not JSON.
+// All writes go through this. Some successful mutations return 204, not JSON.
 export async function apiWrite<T = void>(
   path: string,
   method: "POST" | "PATCH" | "PUT" | "DELETE",

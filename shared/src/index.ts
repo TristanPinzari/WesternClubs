@@ -413,7 +413,7 @@ export const updateProfileSchema = z
   .partial();
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 
-// ---- Aryan's feed: use only merged tables; public-RSVP ranking is still pending. ----
+// ---- Personalized feed: followed clubs, public followed RSVPs, interests. ----
 export const feedListQuerySchema = eventListQuerySchema.pick({
   limit: true,
   offset: true,
